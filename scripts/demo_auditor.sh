@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BIN_DIR="${ROOT_DIR}/bin"
+BIN_DIR="${VAOL_DEMO_BIN_DIR:-${ROOT_DIR}/bin}"
 COMPOSE_FILE="${ROOT_DIR}/deploy/docker/docker-compose.yml"
 
 RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -17,6 +17,7 @@ TENANT_ID="${VAOL_DEMO_TENANT:-acme-health-${RUN_ID}}"
 OPA_POLICY="${VAOL_DEMO_OPA_POLICY:-v1/data/vaol/mandatory_citations}"
 KEEP_STACK="${VAOL_DEMO_KEEP_STACK:-0}"
 RESET_STATE="${VAOL_DEMO_RESET_STATE:-1}"
+SKIP_BUILD="${VAOL_DEMO_SKIP_BUILD:-0}"
 DSN="${VAOL_DEMO_DSN:-postgres://vaol:vaol@localhost:5432/vaol?sslmode=disable}"
 
 mkdir -p "${KEY_DIR}" "${LOG_DIR}" "${ARTIFACT_DIR}"
@@ -60,11 +61,20 @@ trap cleanup EXIT
 require_cmd curl
 require_cmd jq
 require_cmd docker
-require_cmd go
+if [[ "${SKIP_BUILD}" != "1" ]]; then
+  require_cmd go
+fi
 ensure_docker_ready
 
-echo "[demo] building vaol binaries..."
-(cd "${ROOT_DIR}" && go build -o "${BIN_DIR}/vaol-server" ./cmd/vaol-server && go build -o "${BIN_DIR}/vaol" ./cmd/vaol-cli)
+if [[ "${SKIP_BUILD}" == "1" ]]; then
+  if [[ ! -x "${BIN_DIR}/vaol-server" ]] || [[ ! -x "${BIN_DIR}/vaol" ]]; then
+    echo "VAOL_DEMO_SKIP_BUILD=1 requires executable binaries at ${BIN_DIR}/vaol-server and ${BIN_DIR}/vaol" >&2
+    exit 1
+  fi
+else
+  echo "[demo] building vaol binaries..."
+  (cd "${ROOT_DIR}" && go build -o "${BIN_DIR}/vaol-server" ./cmd/vaol-server && go build -o "${BIN_DIR}/vaol" ./cmd/vaol-cli)
+fi
 
 echo "[demo] generating signing key pair..."
 "${BIN_DIR}/vaol" keys generate --output "${KEY_DIR}" >"${LOG_DIR}/keygen.log" 2>&1

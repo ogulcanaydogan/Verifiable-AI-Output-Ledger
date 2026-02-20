@@ -288,6 +288,7 @@ The `vaol verify` CLI command and the `/v1/verify` API perform all four checks.
 - [Threat Model](docs/threat-model.md)
 - [Auditor Guide](docs/auditor-guide.md)
 - [Deployment Guide](docs/deployment-production-profile.md)
+- [Release Runbook](docs/releases/release-runbook.md)
 - [Changelog](CHANGELOG.md)
 - [Examples](examples/)
 
