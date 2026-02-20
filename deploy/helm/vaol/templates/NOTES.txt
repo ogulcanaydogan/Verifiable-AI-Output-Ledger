@@ -1,0 +1,46 @@
+VAOL — Verifiable AI Output Ledger v{{ .Chart.AppVersion }}
+
+{{- if .Values.ingress.enabled }}
+Access VAOL at:
+{{- range .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+{{- end }}
+{{- else if eq .Values.service.type "NodePort" }}
+Get the VAOL URL by running:
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "vaol.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if eq .Values.service.type "LoadBalancer" }}
+Get the VAOL URL by running:
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+  kubectl get svc --namespace {{ .Release.Namespace }} -w {{ include "vaol.fullname" . }}
+{{- else }}
+Access VAOL via port-forward:
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "vaol.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+  echo http://localhost:{{ .Values.service.port }}
+{{- end }}
+
+Health check:
+  curl http://localhost:{{ .Values.service.port }}/v1/health
+
+{{- if .Values.proxy.enabled }}
+
+OpenAI-Compatible Proxy:
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "vaol.fullname" . }}-proxy {{ .Values.proxy.port }}:{{ .Values.proxy.port }}
+  export OPENAI_BASE_URL=http://localhost:{{ .Values.proxy.port }}/v1
+{{- end }}
+
+{{- if eq .Values.profile.mode "production" }}
+
+⚠️  Production profile is active:
+  - Authentication: required (set JWT/OIDC configuration)
+  - Policy mode: fail-closed
+  - Sigstore Rekor: required
+{{- end }}
+
+{{- if and (eq .Values.server.signingMode "ed25519") (not .Values.signingKey.create) (not .Values.signingKey.existingSecret) }}
+
+⚠️  No signing key configured. Create a Kubernetes secret with your Ed25519 private key:
+  kubectl create secret generic {{ include "vaol.fullname" . }}-signing-key \
+    --from-file=signing.pem=/path/to/your/vaol-signing.pem
+{{- end }}

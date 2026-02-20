@@ -322,3 +322,50 @@ func BenchmarkInclusionProof(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkConsistencyProof(b *testing.B) {
+	tree := New()
+	for i := 0; i < 10000; i++ {
+		tree.Append([]byte(fmt.Sprintf("bench-leaf-%d", i)))
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := tree.ConsistencyProof(5000, 10000); err != nil {
+			b.Fatalf("ConsistencyProof failed: %v", err)
+		}
+	}
+}
+
+func BenchmarkVerifyInclusion(b *testing.B) {
+	tree := New()
+	for i := 0; i < 10000; i++ {
+		tree.Append([]byte(fmt.Sprintf("bench-leaf-%d", i)))
+	}
+	size := tree.Size()
+	leafData := []byte("bench-leaf-42")
+	proof, err := tree.InclusionProof(42, size)
+	if err != nil {
+		b.Fatalf("InclusionProof setup: %v", err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := VerifyInclusion(leafData, proof); err != nil {
+			b.Fatalf("VerifyInclusion failed: %v", err)
+		}
+	}
+}
+
+func BenchmarkTreeRebuild(b *testing.B) {
+	// Pre-compute leaf data for rebuild benchmark.
+	leaves := make([][]byte, 10000)
+	for i := range leaves {
+		leaves[i] = []byte(fmt.Sprintf("bench-leaf-%d", i))
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		tree := New()
+		for _, leaf := range leaves {
+			tree.Append(leaf)
+		}
+	}
+}

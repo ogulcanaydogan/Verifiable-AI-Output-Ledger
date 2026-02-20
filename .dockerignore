@@ -1,0 +1,72 @@
+# Git
+.git
+.gitignore
+
+# Build artifacts
+bin/
+dist/
+coverage.out
+coverage.html
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# SDKs (not needed for Go binary builds)
+sdk/
+
+# TypeScript / Node
+node_modules/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info
+
+# Documentation
+docs/
+*.md
+!go.mod
+!go.sum
+
+# Keys and secrets
+*.pem
+*.key
+*.p12
+*.pfx
+keys/
+
+# Deployment configs (not needed in build context)
+deploy/helm/
+.github/
+
+# Proto (no codegen yet)
+proto/
+
+# Web UI
+web/
+
+# Scripts
+scripts/
+
+# Test artifacts
+tests/
+tmp/
+data/
+htmlcov/
+
+# Misc
+.claude/
+.golangci.yml
+.goreleaser.yml
+LICENSE
+CHANGELOG.md
+Makefile
+schemas/
+examples/

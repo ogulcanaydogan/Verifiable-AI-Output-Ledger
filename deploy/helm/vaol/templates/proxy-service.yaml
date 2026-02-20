@@ -1,0 +1,19 @@
+{{- if .Values.proxy.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "vaol.fullname" . }}-proxy
+  labels:
+    {{- include "vaol.labels" . | nindent 4 }}
+    app.kubernetes.io/component: proxy
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.proxy.port }}
+      targetPort: https
+      protocol: TCP
+      name: https
+  selector:
+    {{- include "vaol.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: proxy
+{{- end }}

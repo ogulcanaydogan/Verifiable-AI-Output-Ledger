@@ -1,0 +1,100 @@
+version: 2
+
+builds:
+  - id: vaol-server
+    binary: vaol-server
+    main: ./cmd/vaol-server
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}} -X main.date={{.Date}}
+
+  - id: vaol-cli
+    binary: vaol
+    main: ./cmd/vaol-cli
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}} -X main.date={{.Date}}
+
+  - id: vaol-proxy
+    binary: vaol-proxy
+    main: ./cmd/vaol-proxy
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}} -X main.date={{.Date}}
+
+archives:
+  - id: default
+    builds:
+      - vaol-server
+      - vaol-cli
+      - vaol-proxy
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: "vaol_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+dockers:
+  - id: vaol-server
+    ids:
+      - vaol-server
+    image_templates:
+      - "ghcr.io/ogulcanaydogan/vaol-server:{{ .Tag }}"
+      - "ghcr.io/ogulcanaydogan/vaol-server:latest"
+    dockerfile: deploy/docker/Dockerfile.server
+    build_flag_templates:
+      - "--platform=linux/amd64"
+
+  - id: vaol-proxy
+    ids:
+      - vaol-proxy
+    image_templates:
+      - "ghcr.io/ogulcanaydogan/vaol-proxy:{{ .Tag }}"
+      - "ghcr.io/ogulcanaydogan/vaol-proxy:latest"
+    dockerfile: deploy/docker/Dockerfile.proxy
+    build_flag_templates:
+      - "--platform=linux/amd64"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^style:"
+      - "^chore\\(deps\\):"
+      - "^test:"
+      - Merge pull request
+
+release:
+  github:
+    owner: ogulcanaydogan
+    name: vaol
+  prerelease: auto

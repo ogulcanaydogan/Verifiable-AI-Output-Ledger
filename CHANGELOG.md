@@ -5,6 +5,22 @@ All notable changes to VAOL will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-02-20
+
+### Added
+
+- **Go benchmarks** — Performance benchmarks for Merkle tree operations (append, root, inclusion proof, consistency proof, verify inclusion, tree rebuild), signer (Ed25519 sign/verify, DSSE envelope sign/verify, PAE, key generation), and record (canonicalize, compute hash, JSON marshal).
+- **Helm HPA template** — `autoscaling/v2` HorizontalPodAutoscaler wired to `autoscaling` values.
+- **Helm NOTES.txt** — Post-install instructions for accessing the VAOL server, proxy, and signing key setup guidance.
+- **Helm signing key Secret** — Template for creating Ed25519 signing key secrets when `signingKey.create=true`.
+- **Helm proxy Deployment and Service** — Kubernetes templates for the OpenAI-compatible proxy when `proxy.enabled=true`.
+- **`.goreleaser.yml`** — Cross-platform release configuration for all three binaries (linux/darwin/windows × amd64/arm64) with Docker image publishing to GHCR.
+- **`.dockerignore`** — Optimized Docker build context excluding SDKs, docs, tests, keys, and CI configs.
+
+### Fixed
+
+- Docker Compose OPA image pinned to `0.70.0-static` for consistency with Helm chart values.
+
 ## [0.2.0] - 2026-02-20
 
 ### Added
@@ -55,5 +71,6 @@ Initial public release of the Verifiable AI Output Ledger.
 - Startup Merkle rebuild with checkpoint/root validation.
 - Tenant-bound API access with cross-tenant rejection.
 
+[0.3.0]: https://github.com/ogulcanaydogan/vaol/releases/tag/v0.3.0
 [0.2.0]: https://github.com/ogulcanaydogan/vaol/releases/tag/v0.2.0
 [0.1.0]: https://github.com/ogulcanaydogan/vaol/releases/tag/v0.1.0
