@@ -107,6 +107,35 @@ Auto-instruments an OpenAI client instance. Options:
 | `async` | `boolean` | `true` | Fire-and-forget record emission |
 | `onError` | `function` | `undefined` | Error callback |
 
+### Client-Side Verification (v0.2.0)
+
+Both DSSE signatures and Merkle proofs can be verified locally without server round-trips:
+
+```typescript
+import { verifyDSSEEd25519, verifyInclusionProof } from "@vaol/sdk";
+
+// Verify Ed25519 DSSE envelope signature
+const sigResult = verifyDSSEEd25519(envelope, publicKeyBytes);
+console.log(sigResult.valid); // true / false
+console.log(sigResult.checks); // [{ name: "signature_0", passed: true }]
+
+// Verify Merkle inclusion proof (RFC 6962)
+const proofResult = verifyInclusionProof(
+  Buffer.from(canonicalJSON),
+  leafIndex,
+  treeSize,
+  proofHashes, // ["sha256:abc...", "sha256:def..."]
+  expectedRoot, // "sha256:..."
+);
+console.log(proofResult.valid);
+```
+
+The verifier module is also available as a separate import:
+
+```typescript
+import { verifyDSSEEd25519, verifyInclusionProof } from "@vaol/sdk/verifier";
+```
+
 ## Requirements
 
 - Node.js >= 18.0

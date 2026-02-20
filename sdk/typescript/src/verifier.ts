@@ -7,7 +7,7 @@
  */
 
 import { createHash, verify as cryptoVerify } from "node:crypto";
-import type { DSSEEnvelope, InclusionProof } from "./types.js";
+import type { DSSEEnvelope } from "./types.js";
 
 // ---------------------------------------------------------------------------
 // Result type
@@ -27,8 +27,6 @@ export interface VerifyResult {
 // ---------------------------------------------------------------------------
 // DSSE helpers
 // ---------------------------------------------------------------------------
-
-const PAYLOAD_TYPE = "application/vnd.vaol.decision-record.v1+json";
 
 function pae(payloadType: string, payload: Buffer): Buffer {
   const prefix = Buffer.from(

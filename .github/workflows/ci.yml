@@ -30,7 +30,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: cd sdk/python && pip install -e ".[dev]"
+      - run: cd sdk/python && pip install -e ".[dev]" cryptography
       - run: cd sdk/python && ruff check vaol/
       - run: cd sdk/python && mypy vaol/
 
@@ -62,7 +62,27 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: cd sdk/python && pip install -e ".[dev]" && pytest tests/ -v
+      - run: cd sdk/python && pip install -e ".[dev]" cryptography && pytest tests/ -v
+
+  test-typescript:
+    name: Test (TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: cd sdk/typescript && npm install && npm test
+
+  lint-typescript:
+    name: Lint (TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: cd sdk/typescript && npm install && npm run lint
 
   test-policies:
     name: Test (OPA Policies)

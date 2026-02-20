@@ -2,15 +2,11 @@ import { randomUUID } from "node:crypto";
 import { VAOLClient } from "./client.js";
 import type {
   DecisionRecord,
-  Identity,
-  Model,
   Parameters,
   PromptContext,
   PolicyContext,
   RAGContext,
-  Output,
   Trace,
-  Integrity,
   PolicyDecision,
   OutputMode,
 } from "./types.js";

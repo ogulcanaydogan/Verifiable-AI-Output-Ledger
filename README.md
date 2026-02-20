@@ -109,6 +109,26 @@ const response = await openai.chat.completions.create({
 // DecisionRecord automatically emitted to VAOL
 ```
 
+### Client-Side Verification (v0.2.0)
+
+Both SDKs support offline verification of DSSE signatures and Merkle proofs without trusting the server:
+
+**Python:**
+```python
+from vaol import verify_dsse_ed25519, verify_inclusion_proof
+
+sig_result = verify_dsse_ed25519(envelope, public_key_bytes)
+proof_result = verify_inclusion_proof(leaf_data, leaf_index, tree_size, hashes, root)
+```
+
+**TypeScript:**
+```typescript
+import { verifyDSSEEd25519, verifyInclusionProof } from "@vaol/sdk";
+
+const sigResult = verifyDSSEEd25519(envelope, publicKey);
+const proofResult = verifyInclusionProof(leafData, leafIndex, treeSize, hashes, root);
+```
+
 ### CLI
 
 ```bash
