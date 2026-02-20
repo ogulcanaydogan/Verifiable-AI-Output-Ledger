@@ -30,6 +30,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Attest Release Artifacts
         uses: actions/attest-build-provenance@v2
+        continue-on-error: true
         with:
           subject-path: "dist/*"
       - name: Generate SBOM
