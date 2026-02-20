@@ -197,3 +197,73 @@ class TestAsyncVAOLClient:
         async with client:
             result = await client.health()
             assert result["status"] == "ok"
+
+    @pytest.mark.asyncio
+    async def test_list(self):
+        transport = httpx.MockTransport(
+            lambda req: httpx.Response(200, json={"records": [], "count": 0})
+        )
+        client = AsyncVAOLClient.__new__(AsyncVAOLClient)
+        client.server_url = "http://localhost:8080"
+        client.tenant_id = None
+        client._client = httpx.AsyncClient(transport=transport, base_url="http://localhost:8080")
+
+        result = await client.list(tenant_id="test-org", limit=10)
+        assert result["count"] == 0
+        await client.close()
+
+    @pytest.mark.asyncio
+    async def test_get_proof(self):
+        transport = httpx.MockTransport(
+            lambda req: httpx.Response(200, json={"proof_type": "inclusion", "leaf_index": 5})
+        )
+        client = AsyncVAOLClient.__new__(AsyncVAOLClient)
+        client.server_url = "http://localhost:8080"
+        client.tenant_id = None
+        client._client = httpx.AsyncClient(transport=transport, base_url="http://localhost:8080")
+
+        result = await client.get_proof("abc-123")
+        assert result["proof_type"] == "inclusion"
+        await client.close()
+
+    @pytest.mark.asyncio
+    async def test_verify(self):
+        transport = httpx.MockTransport(
+            lambda req: httpx.Response(200, json={"valid": True, "checks": []})
+        )
+        client = AsyncVAOLClient.__new__(AsyncVAOLClient)
+        client.server_url = "http://localhost:8080"
+        client.tenant_id = None
+        client._client = httpx.AsyncClient(transport=transport, base_url="http://localhost:8080")
+
+        result = await client.verify({"payloadType": "test", "payload": "dGVzdA", "signatures": []})
+        assert result["valid"] is True
+        await client.close()
+
+    @pytest.mark.asyncio
+    async def test_export(self):
+        transport = httpx.MockTransport(
+            lambda req: httpx.Response(200, json={"records": [], "metadata": {"total_records": 0}})
+        )
+        client = AsyncVAOLClient.__new__(AsyncVAOLClient)
+        client.server_url = "http://localhost:8080"
+        client.tenant_id = None
+        client._client = httpx.AsyncClient(transport=transport, base_url="http://localhost:8080")
+
+        result = await client.export(tenant_id="test-org")
+        assert result["metadata"]["total_records"] == 0
+        await client.close()
+
+    @pytest.mark.asyncio
+    async def test_checkpoint(self):
+        transport = httpx.MockTransport(
+            lambda req: httpx.Response(200, json={"tree_size": 100, "root_hash": "sha256:abc"})
+        )
+        client = AsyncVAOLClient.__new__(AsyncVAOLClient)
+        client.server_url = "http://localhost:8080"
+        client.tenant_id = None
+        client._client = httpx.AsyncClient(transport=transport, base_url="http://localhost:8080")
+
+        result = await client.checkpoint()
+        assert result["tree_size"] == 100
+        await client.close()

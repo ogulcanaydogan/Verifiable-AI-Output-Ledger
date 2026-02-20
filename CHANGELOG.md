@@ -5,6 +5,22 @@ All notable changes to VAOL will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-02-20
+
+### Added
+
+- **Client-Side Verification (Python)** — `verify_dsse_ed25519()` for Ed25519 DSSE signature verification and `verify_inclusion_proof()` for RFC 6962 Merkle proof validation. Auditors can now verify records without trusting the server.
+- **Client-Side Verification (TypeScript)** — `verifyDSSEEd25519()` and `verifyInclusionProof()` with matching functionality, exported from `@vaol/sdk` and `@vaol/sdk/verifier`.
+- **AsyncVAOLClient completeness** — Added missing `list()`, `get_proof()`, `verify()`, `export()`, and `checkpoint()` async methods to match the synchronous client API.
+- **Python SDK `py.typed` marker** — PEP 561 compliance for downstream type checking.
+- **TypeScript SDK ESM packaging** — Proper `exports` field with `type: "module"` for modern Node.js resolution.
+
+### Changed
+
+- Python SDK version bumped to 0.2.0 with `cryptography>=42.0` dependency.
+- TypeScript SDK version bumped to 0.2.0 with dual `exports` map.
+- Python `pyproject.toml` mypy configuration set to `strict = true`.
+
 ## [0.1.0] - 2026-02-19
 
 Initial public release of the Verifiable AI Output Ledger.
@@ -39,4 +55,5 @@ Initial public release of the Verifiable AI Output Ledger.
 - Startup Merkle rebuild with checkpoint/root validation.
 - Tenant-bound API access with cross-tenant rejection.
 
+[0.2.0]: https://github.com/ogulcanaydogan/vaol/releases/tag/v0.2.0
 [0.1.0]: https://github.com/ogulcanaydogan/vaol/releases/tag/v0.1.0
