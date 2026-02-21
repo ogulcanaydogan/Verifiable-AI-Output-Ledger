@@ -1,0 +1,565 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VAOL Helm Chart Values",
+  "description": "JSON Schema for the VAOL Helm chart values.yaml",
+  "type": "object",
+  "properties": {
+    "replicaCount": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1,
+      "description": "Number of VAOL server replicas"
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "default": "ghcr.io/ogulcanaydogan/vaol-server"
+        },
+        "pullPolicy": {
+          "type": "string",
+          "enum": ["Always", "IfNotPresent", "Never"],
+          "default": "IfNotPresent"
+        },
+        "tag": {
+          "type": "string",
+          "default": "",
+          "description": "Overrides Chart.appVersion"
+        }
+      },
+      "additionalProperties": false
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" }
+        }
+      },
+      "default": []
+    },
+    "nameOverride": {
+      "type": "string",
+      "default": ""
+    },
+    "fullnameOverride": {
+      "type": "string",
+      "default": ""
+    },
+    "serviceAccount": {
+      "type": "object",
+      "properties": {
+        "create": {
+          "type": "boolean",
+          "default": true
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "default": {}
+        },
+        "name": {
+          "type": "string",
+          "default": ""
+        }
+      },
+      "additionalProperties": false
+    },
+    "profile": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["dev", "production"],
+          "default": "dev",
+          "description": "Deployment profile"
+        },
+        "production": {
+          "type": "object",
+          "properties": {
+            "authMode": {
+              "type": "string",
+              "enum": ["disabled", "optional", "required"],
+              "default": "required"
+            },
+            "policyMode": {
+              "type": "string",
+              "enum": ["fail-closed", "allow-all"],
+              "default": "fail-closed"
+            },
+            "anchorMode": {
+              "type": "string",
+              "enum": ["off", "local", "http"],
+              "default": "local"
+            },
+            "sigstoreRekorRequired": {
+              "type": "boolean",
+              "default": true
+            },
+            "failOnStartupCheck": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "server": {
+      "type": "object",
+      "properties": {
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 8080
+        },
+        "signingMode": {
+          "type": "string",
+          "enum": ["ed25519", "sigstore", "kms"],
+          "default": "ed25519",
+          "description": "Signing backend"
+        },
+        "keyPath": {
+          "type": "string",
+          "default": "/etc/vaol/keys/signing.pem",
+          "description": "Path to Ed25519 private key"
+        },
+        "opaURL": {
+          "type": "string",
+          "default": "",
+          "description": "External OPA endpoint (used when opa.enabled=false)"
+        },
+        "opaPolicy": {
+          "type": "string",
+          "default": "v1/data/vaol/decision"
+        },
+        "policyMode": {
+          "type": "string",
+          "enum": ["fail-closed", "allow-all"],
+          "default": "fail-closed"
+        },
+        "authMode": {
+          "type": "string",
+          "enum": ["disabled", "optional", "required"],
+          "default": "disabled"
+        },
+        "jwtIssuer": { "type": "string", "default": "" },
+        "jwtAudience": { "type": "string", "default": "" },
+        "jwtTenantClaim": { "type": "string", "default": "tenant_id" },
+        "jwtSubjectClaim": { "type": "string", "default": "sub" },
+        "jwksFile": { "type": "string", "default": "" },
+        "jwksURL": { "type": "string", "default": "" },
+        "jwtHS256Secret": { "type": "string", "default": "" },
+        "rebuildOnStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Rebuild Merkle tree on server startup"
+        },
+        "failOnStartupCheck": {
+          "type": "boolean",
+          "default": true,
+          "description": "Fail startup if integrity check fails"
+        },
+        "checkpointEvery": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 100,
+          "description": "Create checkpoint every N records"
+        },
+        "checkpointInterval": {
+          "type": "string",
+          "default": "5m",
+          "description": "Create checkpoint on this interval (Go duration)"
+        },
+        "anchorMode": {
+          "type": "string",
+          "enum": ["off", "local", "http"],
+          "default": "local",
+          "description": "Checkpoint anchoring mode"
+        },
+        "anchorURL": {
+          "type": "string",
+          "default": "",
+          "description": "HTTP anchor endpoint URL"
+        },
+        "sigstoreRekorRequired": {
+          "type": "boolean",
+          "default": false
+        },
+        "sigstoreFulcioURL": { "type": "string", "default": "" },
+        "sigstoreRekorURL": { "type": "string", "default": "" },
+        "kmsProvider": {
+          "type": "string",
+          "default": "local-ecdsa"
+        },
+        "kmsKeyURI": {
+          "type": "string",
+          "default": "local://vaol-signing"
+        },
+        "kmsEndpoint": { "type": "string", "default": "" },
+        "kmsAccessToken": { "type": "string", "default": "" },
+        "logLevel": {
+          "type": "string",
+          "enum": ["debug", "info", "warn", "error"],
+          "default": "info"
+        }
+      },
+      "additionalProperties": false
+    },
+    "proxy": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "image": {
+          "type": "object",
+          "properties": {
+            "repository": {
+              "type": "string",
+              "default": "ghcr.io/ogulcanaydogan/vaol-proxy"
+            },
+            "pullPolicy": {
+              "type": "string",
+              "enum": ["Always", "IfNotPresent", "Never"],
+              "default": "IfNotPresent"
+            },
+            "tag": { "type": "string", "default": "" }
+          },
+          "additionalProperties": false
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 8443
+        },
+        "upstreamURL": {
+          "type": "string",
+          "default": "https://api.openai.com",
+          "description": "Upstream OpenAI-compatible API URL"
+        },
+        "replicaCount": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "limits": {
+              "type": "object",
+              "properties": {
+                "cpu": { "type": "string" },
+                "memory": { "type": "string" }
+              },
+              "additionalProperties": false
+            },
+            "requests": {
+              "type": "object",
+              "properties": {
+                "cpu": { "type": "string" },
+                "memory": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "opa": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "image": {
+          "type": "object",
+          "properties": {
+            "repository": {
+              "type": "string",
+              "default": "openpolicyagent/opa"
+            },
+            "tag": {
+              "type": "string",
+              "default": "0.70.0-static"
+            },
+            "pullPolicy": {
+              "type": "string",
+              "enum": ["Always", "IfNotPresent", "Never"],
+              "default": "IfNotPresent"
+            }
+          },
+          "additionalProperties": false
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 8181
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "limits": {
+              "type": "object",
+              "properties": {
+                "cpu": { "type": "string" },
+                "memory": { "type": "string" }
+              },
+              "additionalProperties": false
+            },
+            "requests": {
+              "type": "object",
+              "properties": {
+                "cpu": { "type": "string" },
+                "memory": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "postgresql": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "postgresPassword": { "type": "string" },
+            "database": { "type": "string", "default": "vaol" }
+          },
+          "additionalProperties": true
+        },
+        "primary": {
+          "type": "object",
+          "properties": {
+            "persistence": {
+              "type": "object",
+              "properties": {
+                "enabled": { "type": "boolean", "default": true },
+                "size": { "type": "string", "default": "10Gi" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "externalDatabase": {
+      "type": "object",
+      "properties": {
+        "host": { "type": "string", "default": "" },
+        "port": { "type": "integer", "default": 5432 },
+        "database": { "type": "string", "default": "vaol" },
+        "user": { "type": "string", "default": "vaol" },
+        "password": { "type": "string", "default": "" },
+        "existingSecret": { "type": "string", "default": "" },
+        "existingSecretPasswordKey": { "type": "string", "default": "password" }
+      },
+      "additionalProperties": false
+    },
+    "signingKey": {
+      "type": "object",
+      "properties": {
+        "create": {
+          "type": "boolean",
+          "default": false
+        },
+        "privateKeyPEM": {
+          "type": "string",
+          "default": "",
+          "description": "Base64-encoded PEM private key"
+        },
+        "existingSecret": {
+          "type": "string",
+          "default": ""
+        },
+        "secretKey": {
+          "type": "string",
+          "default": "signing.pem"
+        }
+      },
+      "additionalProperties": false
+    },
+    "service": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["ClusterIP", "NodePort", "LoadBalancer"],
+          "default": "ClusterIP"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 8080
+        }
+      },
+      "additionalProperties": false
+    },
+    "ingress": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "className": { "type": "string", "default": "" },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "default": {}
+        },
+        "hosts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "host": { "type": "string" },
+              "paths": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "path": { "type": "string" },
+                    "pathType": {
+                      "type": "string",
+                      "enum": ["Prefix", "Exact", "ImplementationSpecific"]
+                    }
+                  },
+                  "required": ["path", "pathType"]
+                }
+              }
+            },
+            "required": ["host", "paths"]
+          }
+        },
+        "tls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "secretName": { "type": "string" },
+              "hosts": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          },
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    },
+    "resources": {
+      "type": "object",
+      "properties": {
+        "limits": {
+          "type": "object",
+          "properties": {
+            "cpu": { "type": "string" },
+            "memory": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "requests": {
+          "type": "object",
+          "properties": {
+            "cpu": { "type": "string" },
+            "memory": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "autoscaling": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "minReplicas": { "type": "integer", "minimum": 1, "default": 1 },
+        "maxReplicas": { "type": "integer", "minimum": 1, "default": 10 },
+        "targetCPUUtilizationPercentage": { "type": "integer", "minimum": 1, "maximum": 100, "default": 80 }
+      },
+      "additionalProperties": false
+    },
+    "podAnnotations": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "default": {}
+    },
+    "podSecurityContext": {
+      "type": "object",
+      "properties": {
+        "fsGroup": { "type": "integer" }
+      },
+      "additionalProperties": true
+    },
+    "securityContext": {
+      "type": "object",
+      "properties": {
+        "readOnlyRootFilesystem": { "type": "boolean" },
+        "runAsNonRoot": { "type": "boolean" },
+        "runAsUser": { "type": "integer" },
+        "capabilities": {
+          "type": "object",
+          "properties": {
+            "drop": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "networkPolicy": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false }
+      },
+      "additionalProperties": true
+    },
+    "podDisruptionBudget": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "minAvailable": { "type": "integer", "minimum": 0 },
+        "maxUnavailable": { "type": "integer", "minimum": 0, "default": 1 }
+      },
+      "additionalProperties": false
+    },
+    "nodeSelector": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "default": {}
+    },
+    "tolerations": {
+      "type": "array",
+      "items": { "type": "object" },
+      "default": []
+    },
+    "affinity": {
+      "type": "object",
+      "default": {}
+    }
+  },
+  "additionalProperties": false
+}

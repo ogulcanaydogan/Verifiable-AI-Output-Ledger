@@ -1,7 +1,6 @@
 package export
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 )
@@ -29,10 +28,8 @@ func ReadJSON(path string) (*Bundle, error) {
 
 // FormatRecordSummary returns a one-line summary of a bundle record.
 func FormatRecordSummary(rec BundleRecord) string {
-	payload, err := json.Marshal(rec.Envelope)
-	if err != nil {
-		return fmt.Sprintf("seq=%d (error reading envelope)", rec.SequenceNumber)
+	if rec.Envelope == nil {
+		return fmt.Sprintf("seq=%d (nil envelope)", rec.SequenceNumber)
 	}
-	_ = payload
 	return fmt.Sprintf("seq=%d sigs=%d", rec.SequenceNumber, len(rec.Envelope.Signatures))
 }

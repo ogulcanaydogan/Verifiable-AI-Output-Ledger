@@ -5,6 +5,24 @@ All notable changes to VAOL will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-02-21
+
+### Added
+
+- **Merkle proof tests** — 8 tests for `VerifyInclusion`, `rootFromInclusionProof`, `recomputeRoot` covering single-leaf, multi-leaf, wrong root, wrong proof type, and edge cases.
+- **Checkpoint tests** — 6 tests for `SignCheckpoint` and `VerifyCheckpoint` covering valid round-trip, timestamp accuracy, tamper detection, wrong-key rejection, and field preservation.
+- **Anchor client tests** — 10 tests for `NoopAnchorClient`, `HashAnchorClient`, and `HTTPAnchorClient` covering deterministic hashing, nil checkpoints, HTTP mocking, and server errors.
+- **OPA engine tests** — 9 tests for `OPAEngine.Evaluate` covering allow/deny decisions, server errors, nil results, timeout handling, and engine metadata.
+- **Verification report tests** — 7 tests for `Report.ToJSON`, `Report.ToMarkdown`, `passFailIcon` covering field population, summary tables, failure rendering, and conclusion text.
+- **Helm values schema** — JSON Schema (`values.schema.json`) for validating Helm chart `values.yaml` with type constraints and enums for all configuration options.
+- **gRPC protobuf generation** — Compiled `proto/vaol/v1/ledger.proto` into Go stubs (`gen/vaol/v1/ledger.pb.go`, `ledger_grpc.pb.go`) with 10 RPC definitions and 28 message types.
+- **GitHub issue templates** — Bug report, feature request, and config.yml with security policy link.
+- **Code of Conduct** — Contributor Covenant v2.1.
+
+### Fixed
+
+- **Dead code in `pkg/export/format.go`** — Removed unused `json.Marshal` call and `encoding/json` import; replaced with nil-envelope guard.
+
 ## [0.3.1] - 2026-02-20
 
 ### Fixed
@@ -82,6 +100,7 @@ Initial public release of the Verifiable AI Output Ledger.
 - Startup Merkle rebuild with checkpoint/root validation.
 - Tenant-bound API access with cross-tenant rejection.
 
+[0.4.0]: https://github.com/ogulcanaydogan/vaol/releases/tag/v0.4.0
 [0.3.1]: https://github.com/ogulcanaydogan/vaol/releases/tag/v0.3.1
 [0.3.0]: https://github.com/ogulcanaydogan/vaol/releases/tag/v0.3.0
 [0.2.0]: https://github.com/ogulcanaydogan/vaol/releases/tag/v0.2.0
