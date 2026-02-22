@@ -5,6 +5,21 @@ All notable changes to VAOL will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.10] - 2026-02-22
+
+### Added
+
+- **CI Go toolchain guard** — Added `scripts/check_go_toolchain.sh` and enforced it in the CI workflow to fail fast when workflow `go-version` and Docker builder `golang:` versions drift.
+
+### Changed
+
+- **GHCR smoke cadence** — `ghcr-smoke.yml` now runs on every push to `main` in addition to release events.
+- **GHCR smoke tag resolution** — Manual and push-triggered runs now resolve tags deterministically (explicit input first, otherwise latest repository tag) and emit the chosen tag in logs.
+
+### Fixed
+
+- **Guard portability** — Replaced `rg` dependency in toolchain guard with portable `grep/sed` parsing so GitHub-hosted runners pass without extra packages.
+
 ## [0.2.9] - 2026-02-22
 
 ### Fixed
@@ -123,6 +138,7 @@ Initial public release of the Verifiable AI Output Ledger.
 - Startup Merkle rebuild with checkpoint/root validation.
 - Tenant-bound API access with cross-tenant rejection.
 
+[0.2.10]: https://github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger/releases/tag/v0.2.10
 [0.2.9]: https://github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger/releases/tag/v0.2.9
 [0.2.8]: https://github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger/releases/tag/v0.2.8
 [0.2.7]: https://github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger/releases/tag/v0.2.7
