@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestSigstoreSignVerifyRelaxed(t *testing.T) {
@@ -77,5 +79,69 @@ func TestSigstoreStrictFailsWithoutRekorEntry(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected strict verification error for missing rekor entry")
+	}
+}
+
+func TestSigstoreVerifyRejectsIssuerMismatch(t *testing.T) {
+	cfg := DefaultSigstoreConfig()
+	cfg.RekorURL = ""
+	cfg.RequireRekor = false
+
+	s := NewSigstoreSigner(cfg)
+	payload := []byte("issuer-mismatch")
+	sig, err := s.Sign(context.Background(), payload)
+	if err != nil {
+		t.Fatalf("Sign: %v", err)
+	}
+
+	verifyCfg := cfg
+	verifyCfg.OIDCIssuer = "https://issuer.example.invalid"
+	v := NewSigstoreVerifier(verifyCfg)
+	err = v.Verify(context.Background(), payload, sig)
+	if err == nil || !strings.Contains(err.Error(), "issuer mismatch") {
+		t.Fatalf("expected issuer mismatch error, got: %v", err)
+	}
+}
+
+func TestSigstoreVerifyRejectsIdentityMismatch(t *testing.T) {
+	cfg := DefaultSigstoreConfig()
+	cfg.RekorURL = ""
+	cfg.RequireRekor = false
+
+	s := NewSigstoreSigner(cfg)
+	v := NewSigstoreVerifier(cfg)
+
+	payload := []byte("identity-mismatch")
+	sig, err := s.Sign(context.Background(), payload)
+	if err != nil {
+		t.Fatalf("Sign: %v", err)
+	}
+
+	// Tamper key-id identity binding while keeping signature/certificate unchanged.
+	sig.KeyID = strings.Replace(sig.KeyID, "::ephemeral", "::different-identity", 1)
+	err = v.Verify(context.Background(), payload, sig)
+	if err == nil || !strings.Contains(err.Error(), "identity mismatch") {
+		t.Fatalf("expected identity mismatch error, got: %v", err)
+	}
+}
+
+func TestSigstoreVerifyRejectsTimestampOutsideCertWindow(t *testing.T) {
+	cfg := DefaultSigstoreConfig()
+	cfg.RekorURL = ""
+	cfg.RequireRekor = false
+
+	s := NewSigstoreSigner(cfg)
+	v := NewSigstoreVerifier(cfg)
+
+	payload := []byte("timestamp-window")
+	sig, err := s.Sign(context.Background(), payload)
+	if err != nil {
+		t.Fatalf("Sign: %v", err)
+	}
+
+	sig.Timestamp = time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
+	err = v.Verify(context.Background(), payload, sig)
+	if err == nil || !strings.Contains(err.Error(), "certificate validity check failed") {
+		t.Fatalf("expected certificate validity window failure, got: %v", err)
 	}
 }

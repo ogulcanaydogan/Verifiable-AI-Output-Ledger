@@ -245,9 +245,19 @@ func (v *SigstoreVerifier) Verify(ctx context.Context, payload []byte, sig Signa
 		return fmt.Errorf("sigstore signature missing certificate")
 	}
 
-	pubKey, err := decodeSigstorePublicKey(sig.Cert)
+	pubKey, cert, err := decodeSigstoreCertificate(sig.Cert)
 	if err != nil {
 		return err
+	}
+
+	if err := v.validateKeyIDBinding(sig.KeyID, cert); err != nil {
+		return err
+	}
+
+	if cert != nil {
+		if err := validateCertificatePolicy(cert, sig.Timestamp); err != nil {
+			return err
+		}
 	}
 
 	// Decode and verify the signature.
@@ -274,26 +284,106 @@ func (v *SigstoreVerifier) Verify(ctx context.Context, payload []byte, sig Signa
 	return nil
 }
 
-func decodeSigstorePublicKey(certB64 string) (ed25519.PublicKey, error) {
+func decodeSigstoreCertificate(certB64 string) (ed25519.PublicKey, *x509.Certificate, error) {
 	certBytes, err := b64Decode(certB64)
 	if err != nil {
-		return nil, fmt.Errorf("decoding certificate: %w", err)
+		return nil, nil, fmt.Errorf("decoding certificate: %w", err)
 	}
 
 	// Backward compatibility: previous implementation stored raw Ed25519 public key.
 	if len(certBytes) == ed25519.PublicKeySize {
-		return ed25519.PublicKey(certBytes), nil
+		return ed25519.PublicKey(certBytes), nil, nil
 	}
 
 	cert, err := x509.ParseCertificate(certBytes)
 	if err != nil {
-		return nil, fmt.Errorf("parsing certificate: %w", err)
+		return nil, nil, fmt.Errorf("parsing certificate: %w", err)
 	}
 	pub, ok := cert.PublicKey.(ed25519.PublicKey)
 	if !ok {
-		return nil, fmt.Errorf("certificate public key is not Ed25519")
+		return nil, nil, fmt.Errorf("certificate public key is not Ed25519")
 	}
-	return pub, nil
+	return pub, cert, nil
+}
+
+func validateCertificatePolicy(cert *x509.Certificate, signatureTimestamp string) error {
+	if cert.IsCA {
+		return fmt.Errorf("sigstore certificate policy violation: certificate must not be a CA")
+	}
+	if cert.KeyUsage&x509.KeyUsageDigitalSignature == 0 {
+		return fmt.Errorf("sigstore certificate policy violation: missing digitalSignature key usage")
+	}
+	if len(cert.ExtKeyUsage) > 0 {
+		hasCodeSigning := false
+		for _, usage := range cert.ExtKeyUsage {
+			if usage == x509.ExtKeyUsageCodeSigning {
+				hasCodeSigning = true
+				break
+			}
+		}
+		if !hasCodeSigning {
+			return fmt.Errorf("sigstore certificate policy violation: missing codeSigning extended key usage")
+		}
+	}
+
+	verifyAt := time.Now().UTC()
+	if strings.TrimSpace(signatureTimestamp) != "" {
+		parsed, err := time.Parse(time.RFC3339, signatureTimestamp)
+		if err != nil {
+			return fmt.Errorf("invalid signature timestamp for certificate validation: %w", err)
+		}
+		verifyAt = parsed.UTC()
+	}
+	if verifyAt.Before(cert.NotBefore) || verifyAt.After(cert.NotAfter) {
+		return fmt.Errorf(
+			"sigstore certificate validity check failed: verify_time=%s cert_not_before=%s cert_not_after=%s",
+			verifyAt.Format(time.RFC3339),
+			cert.NotBefore.UTC().Format(time.RFC3339),
+			cert.NotAfter.UTC().Format(time.RFC3339),
+		)
+	}
+
+	return nil
+}
+
+func (v *SigstoreVerifier) validateKeyIDBinding(keyID string, cert *x509.Certificate) error {
+	issuer, identity, ok := parseSigstoreKeyID(keyID)
+	if !ok {
+		return nil
+	}
+
+	if strings.TrimSpace(v.config.OIDCIssuer) != "" && issuer != v.config.OIDCIssuer {
+		return fmt.Errorf("sigstore keyid issuer mismatch: got %q want %q", issuer, v.config.OIDCIssuer)
+	}
+
+	// For legacy raw-public-key cert encoding, binding checks beyond issuer are unavailable.
+	if cert == nil {
+		return nil
+	}
+
+	if cert.Subject.CommonName != "" && cert.Subject.CommonName != identity {
+		return fmt.Errorf("sigstore keyid identity mismatch: keyid=%q cert_common_name=%q", identity, cert.Subject.CommonName)
+	}
+
+	return nil
+}
+
+func parseSigstoreKeyID(keyID string) (issuer string, identity string, ok bool) {
+	trimmed := strings.TrimSpace(keyID)
+	if !strings.HasPrefix(strings.ToLower(trimmed), "fulcio:") {
+		return "", "", false
+	}
+	body := strings.TrimPrefix(trimmed, "fulcio:")
+	parts := strings.SplitN(body, "::", 2)
+	if len(parts) != 2 {
+		return "", "", false
+	}
+	issuer = strings.TrimSpace(parts[0])
+	identity = strings.TrimSpace(parts[1])
+	if issuer == "" || identity == "" {
+		return "", "", false
+	}
+	return issuer, identity, true
 }
 
 func (v *SigstoreVerifier) verifyRekorEntry(ctx context.Context, entryID string) error {
