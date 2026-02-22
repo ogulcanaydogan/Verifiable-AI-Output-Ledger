@@ -4,8 +4,8 @@
 
 Provides tamper-evident audit trails for regulated industries where organizations must prove the provenance, policy compliance, and integrity of every AI-generated output. DSSE envelopes, RFC 6962 Merkle trees, OPA policy-as-code, and multi-tenant JWT authentication.
 
-[![CI](https://github.com/ogulcanaydogan/VAOL/actions/workflows/ci.yml/badge.svg)](https://github.com/ogulcanaydogan/VAOL/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ogulcanaydogan/VAOL)](https://goreportcard.com/report/github.com/ogulcanaydogan/VAOL)
+[![CI](https://github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger/actions/workflows/ci.yml/badge.svg)](https://github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger)](https://goreportcard.com/report/github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8.svg)](go.mod)
 [![Python SDK](https://img.shields.io/badge/Python_SDK-3.10+-3776AB.svg)](sdk/python)
