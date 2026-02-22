@@ -65,8 +65,22 @@ jobs:
       - name: Pull release images
         run: |
           set -euo pipefail
-          docker pull "ghcr.io/${{ github.repository_owner }}/vaol-server:${TAG}"
-          docker pull "ghcr.io/${{ github.repository_owner }}/vaol-proxy:${TAG}"
+          pull_with_retry() {
+            local image="$1"
+            local attempts=20
+            local delay=15
+            for i in $(seq 1 "${attempts}"); do
+              if docker pull "${image}"; then
+                return 0
+              fi
+              echo "Pull failed for ${image} (attempt ${i}/${attempts}); retrying in ${delay}s..."
+              sleep "${delay}"
+            done
+            echo "Failed to pull ${image} after ${attempts} attempts" >&2
+            return 1
+          }
+          pull_with_retry "ghcr.io/${{ github.repository_owner }}/vaol-server:${TAG}"
+          pull_with_retry "ghcr.io/${{ github.repository_owner }}/vaol-proxy:${TAG}"
 
       - name: Runtime help smoke
         run: |
