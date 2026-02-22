@@ -392,6 +392,29 @@ describe("VAOLClient HTTP", () => {
     expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
   });
 
+  it("should verify an envelope with profile wrapper payload", async () => {
+    mockFetch.mockReturnValueOnce(
+      jsonResponse({
+        valid: true,
+        checks: [{ name: "signature", passed: true }],
+      })
+    );
+
+    const client = new VAOLClient({ baseURL: "http://localhost:8080" });
+    const envelope = {
+      payloadType: "application/vnd.vaol.decision-record.v1+json",
+      payload: "dGVzdA==",
+      signatures: [{ keyid: "key-1", sig: "c2ln" }],
+    };
+    const result = await client.verify(envelope, "strict");
+
+    expect(result.valid).toBe(true);
+    const requestInit = mockFetch.mock.calls[0][1] as RequestInit;
+    const body = JSON.parse(String(requestInit.body));
+    expect(body.verification_profile).toBe("strict");
+    expect(body.envelope).toEqual(envelope);
+  });
+
   it("should get checkpoint", async () => {
     mockFetch.mockReturnValueOnce(
       jsonResponse({ tree_size: 100, root_hash: "sha256:abc" })

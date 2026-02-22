@@ -405,9 +405,9 @@ export OPENAI_BASE_URL=http://localhost:8443/v1
 | `GET` | `/v1/records` | List records (with filters) |
 | `GET` | `/v1/records/{id}/proof` | Get Merkle inclusion proof |
 | `GET` | `/v1/proofs/{id}` | Get inclusion proof by proof ID |
-| `POST` | `/v1/verify` | Verify a DSSE envelope |
-| `POST` | `/v1/verify/record` | Verify record (`?profile=basic\|strict\|fips`) |
-| `POST` | `/v1/verify/bundle` | Verify an audit bundle |
+| `POST` | `/v1/verify` | Verify a DSSE envelope (`profile` query or `verification_profile` body) |
+| `POST` | `/v1/verify/record` | Verify record (`basic\|strict\|fips`) |
+| `POST` | `/v1/verify/bundle` | Verify an audit bundle (`profile` query or `verification_profile` body) |
 | `GET` | `/v1/ledger/checkpoint` | Get latest Merkle checkpoint |
 | `GET` | `/v1/ledger/checkpoints/latest` | Alias for latest signed checkpoint |
 | `GET` | `/v1/ledger/consistency` | Get consistency proof (`from`,`to`) |

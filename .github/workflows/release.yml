@@ -35,6 +35,31 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run Auditor Evidence Demo
+        env:
+          VAOL_DEMO_KEEP_STACK: "0"
+          VAOL_DEMO_RESET_STATE: "1"
+        run: ./scripts/demo_auditor.sh
+      - name: Package Auditor Evidence Bundle
+        run: |
+          set -euo pipefail
+          RUN_DIR="$(ls -1dt tmp/demo-auditor/* | head -n 1)"
+          ARTIFACT_DIR="${RUN_DIR}/artifacts"
+          test -d "${ARTIFACT_DIR}"
+          ARCHIVE="auditor-evidence-${GITHUB_REF_NAME}.tar.gz"
+          tar -C "${RUN_DIR}" -czf "${ARCHIVE}" artifacts
+          echo "AUDITOR_EVIDENCE_ARCHIVE=${ARCHIVE}" >> "${GITHUB_ENV}"
+      - name: Upload Auditor Evidence Artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: auditor-evidence-${{ github.ref_name }}
+          path: |
+            ${{ env.AUDITOR_EVIDENCE_ARCHIVE }}
+            tmp/demo-auditor/**/artifacts/**
+      - name: Attach Auditor Evidence to Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${GITHUB_REF_NAME}" "${AUDITOR_EVIDENCE_ARCHIVE}" --clobber
       - name: Attest Release Artifacts
         uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be
         if: ${{ !(github.event.repository.private && github.event.repository.owner.type == 'User') }}

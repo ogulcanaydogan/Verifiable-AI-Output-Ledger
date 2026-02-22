@@ -32,7 +32,7 @@ const receipt = await client.append(record);
 console.log(`Record stored at sequence ${receipt.sequence_number}`);
 
 // Verify
-const result = await client.verify(receipt.envelope);
+const result = await client.verify(receipt.envelope, "strict");
 console.log(`Valid: ${result.valid}`);
 ```
 
@@ -69,7 +69,7 @@ const response = await openai.chat.completions.create({
 | `get(requestID)` | Get a record by request ID |
 | `list(options?)` | List records with filters |
 | `getProof(requestID)` | Get Merkle inclusion proof |
-| `verify(envelope)` | Verify a DSSE envelope |
+| `verify(envelope, verificationProfile?)` | Verify a DSSE envelope (`basic`, `strict`, `fips`) |
 | `checkpoint()` | Get latest Merkle checkpoint |
 | `exportBundle(options?)` | Export audit bundle |
 | `health()` | Health check |

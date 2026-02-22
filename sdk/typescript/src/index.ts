@@ -23,5 +23,6 @@ export type {
   DSSEEnvelope,
   DSSESignature,
   VerificationResult,
+  VerificationProfile,
   CheckResult,
 } from "./types.js";

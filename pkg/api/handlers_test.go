@@ -531,6 +531,114 @@ func TestVerifyRecord(t *testing.T) {
 	}
 }
 
+func TestVerifyRecordWrappedRequestWithProfile(t *testing.T) {
+	ts, _, _ := newTestServer(t)
+	defer ts.Close()
+
+	body := validRecordJSON(t)
+	resp := mustPost(t, ts.URL+"/v1/records", "application/json", body)
+	var receipt record.Receipt
+	decodeJSON(t, resp.Body, &receipt)
+	resp.Body.Close()
+
+	resp2 := mustGet(t, ts.URL+"/v1/records/"+receipt.RequestID.String())
+	var stored store.StoredRecord
+	decodeJSON(t, resp2.Body, &stored)
+	resp2.Body.Close()
+
+	verifyReq := map[string]any{
+		"envelope":             stored.Envelope,
+		"verification_profile": "strict",
+	}
+	verifyBody, _ := json.Marshal(verifyReq)
+	resp3 := mustPost(t, ts.URL+"/v1/verify", "application/json", verifyBody)
+	defer resp3.Body.Close()
+
+	if resp3.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", resp3.StatusCode)
+	}
+
+	var result map[string]any
+	decodeJSON(t, resp3.Body, &result)
+	if result["valid"] != false {
+		t.Fatalf("expected strict verification to fail, got %v", result["valid"])
+	}
+	checks, ok := result["checks"].([]any)
+	if !ok {
+		t.Fatalf("checks has unexpected type %T", result["checks"])
+	}
+	foundStrictCheck := false
+	for _, item := range checks {
+		check, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		if check["name"] == "profile_strict" {
+			foundStrictCheck = true
+			if check["passed"] != false {
+				t.Fatalf("expected strict check to fail, got %+v", check)
+			}
+		}
+	}
+	if !foundStrictCheck {
+		t.Fatal("expected profile_strict check in verification result")
+	}
+}
+
+func TestVerifyRecordRejectsInvalidProfile(t *testing.T) {
+	ts, _, _ := newTestServer(t)
+	defer ts.Close()
+
+	body := validRecordJSON(t)
+	resp := mustPost(t, ts.URL+"/v1/records", "application/json", body)
+	var receipt record.Receipt
+	decodeJSON(t, resp.Body, &receipt)
+	resp.Body.Close()
+
+	resp2 := mustGet(t, ts.URL+"/v1/records/"+receipt.RequestID.String())
+	var stored store.StoredRecord
+	decodeJSON(t, resp2.Body, &stored)
+	resp2.Body.Close()
+
+	verifyReq := map[string]any{
+		"envelope":             stored.Envelope,
+		"verification_profile": "ultra",
+	}
+	verifyBody, _ := json.Marshal(verifyReq)
+	resp3 := mustPost(t, ts.URL+"/v1/verify", "application/json", verifyBody)
+	defer resp3.Body.Close()
+	if resp3.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", resp3.StatusCode)
+	}
+}
+
+func TestVerifyRecordRejectsConflictingProfileInputs(t *testing.T) {
+	ts, _, _ := newTestServer(t)
+	defer ts.Close()
+
+	body := validRecordJSON(t)
+	resp := mustPost(t, ts.URL+"/v1/records", "application/json", body)
+	var receipt record.Receipt
+	decodeJSON(t, resp.Body, &receipt)
+	resp.Body.Close()
+
+	resp2 := mustGet(t, ts.URL+"/v1/records/"+receipt.RequestID.String())
+	var stored store.StoredRecord
+	decodeJSON(t, resp2.Body, &stored)
+	resp2.Body.Close()
+
+	verifyReq := map[string]any{
+		"envelope":             stored.Envelope,
+		"verification_profile": "strict",
+	}
+	verifyBody, _ := json.Marshal(verifyReq)
+	resp3 := mustPost(t, ts.URL+"/v1/verify?profile=basic", "application/json", verifyBody)
+	defer resp3.Body.Close()
+	if resp3.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", resp3.StatusCode)
+	}
+}
+
 func TestCheckpoint(t *testing.T) {
 	ts, _, _ := newTestServer(t)
 	defer ts.Close()
@@ -676,6 +784,49 @@ func TestVerifyBundle(t *testing.T) {
 		t.Fatalf("decode verify result: %v", err)
 	}
 
+	if verifyResult["summary"] != "VERIFICATION PASSED" {
+		t.Fatalf("expected VERIFICATION PASSED, got %v", verifyResult["summary"])
+	}
+}
+
+func TestVerifyBundleWrappedRequestWithProfile(t *testing.T) {
+	ts, _, _ := newTestServer(t)
+	defer ts.Close()
+
+	for i := 0; i < 2; i++ {
+		body := validRecordJSON(t)
+		r := mustPost(t, ts.URL+"/v1/records", "application/json", body)
+		r.Body.Close()
+	}
+
+	exportReq := map[string]any{
+		"tenant_id": "test-tenant",
+		"limit":     10,
+	}
+	exportBody, _ := json.Marshal(exportReq)
+	exportResp := mustPost(t, ts.URL+"/v1/export", "application/json", exportBody)
+	defer exportResp.Body.Close()
+
+	var bundle map[string]any
+	if err := json.NewDecoder(exportResp.Body).Decode(&bundle); err != nil {
+		t.Fatalf("decode export bundle: %v", err)
+	}
+
+	verifyReq := map[string]any{
+		"bundle":               bundle,
+		"verification_profile": "basic",
+	}
+	verifyBody, _ := json.Marshal(verifyReq)
+	verifyResp := mustPost(t, ts.URL+"/v1/verify/bundle", "application/json", verifyBody)
+	defer verifyResp.Body.Close()
+	if verifyResp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", verifyResp.StatusCode)
+	}
+
+	var verifyResult map[string]any
+	if err := json.NewDecoder(verifyResp.Body).Decode(&verifyResult); err != nil {
+		t.Fatalf("decode verify result: %v", err)
+	}
 	if verifyResult["summary"] != "VERIFICATION PASSED" {
 		t.Fatalf("expected VERIFICATION PASSED, got %v", verifyResult["summary"])
 	}

@@ -80,9 +80,19 @@ class VAOLClient:
         resp.raise_for_status()
         return _decode_json_object(resp)
 
-    def verify(self, envelope: dict[str, Any]) -> dict[str, Any]:
+    def verify(
+        self,
+        envelope: dict[str, Any],
+        verification_profile: str | None = None,
+    ) -> dict[str, Any]:
         """Verify a DSSE envelope."""
-        resp = self._client.post("/v1/verify", json=envelope)
+        payload: Any = envelope
+        if verification_profile:
+            payload = {
+                "envelope": envelope,
+                "verification_profile": verification_profile,
+            }
+        resp = self._client.post("/v1/verify", json=payload)
         resp.raise_for_status()
         return _decode_json_object(resp)
 
@@ -198,9 +208,19 @@ class AsyncVAOLClient:
         resp.raise_for_status()
         return _decode_json_object(resp)
 
-    async def verify(self, envelope: dict[str, Any]) -> dict[str, Any]:
+    async def verify(
+        self,
+        envelope: dict[str, Any],
+        verification_profile: str | None = None,
+    ) -> dict[str, Any]:
         """Verify a DSSE envelope."""
-        resp = await self._client.post("/v1/verify", json=envelope)
+        payload: Any = envelope
+        if verification_profile:
+            payload = {
+                "envelope": envelope,
+                "verification_profile": verification_profile,
+            }
+        resp = await self._client.post("/v1/verify", json=payload)
         resp.raise_for_status()
         return _decode_json_object(resp)
 

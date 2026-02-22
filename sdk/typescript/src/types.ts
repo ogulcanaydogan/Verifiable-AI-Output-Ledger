@@ -166,6 +166,8 @@ export interface VerificationResult {
   error?: string;
 }
 
+export type VerificationProfile = "basic" | "strict" | "fips";
+
 export interface CheckResult {
   name: string;
   passed: boolean;

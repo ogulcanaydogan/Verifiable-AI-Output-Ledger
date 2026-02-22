@@ -4,6 +4,7 @@ import type {
   Receipt,
   VerificationResult,
   DSSEEnvelope,
+  VerificationProfile,
 } from "./types.js";
 
 export interface VAOLClientOptions {
@@ -90,8 +91,17 @@ export class VAOLClient {
   }
 
   /** Verify a single record or DSSE envelope. */
-  async verify(envelope: DSSEEnvelope): Promise<VerificationResult> {
-    return this.request<VerificationResult>("POST", "/v1/verify", envelope);
+  async verify(
+    envelope: DSSEEnvelope,
+    verificationProfile?: VerificationProfile
+  ): Promise<VerificationResult> {
+    if (!verificationProfile) {
+      return this.request<VerificationResult>("POST", "/v1/verify", envelope);
+    }
+    return this.request<VerificationResult>("POST", "/v1/verify", {
+      envelope,
+      verification_profile: verificationProfile,
+    });
   }
 
   /** Get the latest signed Merkle checkpoint. */
