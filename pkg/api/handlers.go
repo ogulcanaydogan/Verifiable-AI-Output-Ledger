@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -21,6 +22,16 @@ import (
 	"github.com/ogulcanaydogan/vaol/pkg/store"
 	"github.com/ogulcanaydogan/vaol/pkg/verifier"
 )
+
+type verifyEnvelopeRequest struct {
+	Envelope            *signer.Envelope `json:"envelope"`
+	VerificationProfile string           `json:"verification_profile"`
+}
+
+type verifyBundleRequest struct {
+	Bundle              *export.Bundle `json:"bundle"`
+	VerificationProfile string         `json:"verification_profile"`
+}
 
 func (s *Server) handleAppendRecord(w http.ResponseWriter, r *http.Request) {
 	var rec record.DecisionRecord
@@ -437,24 +448,25 @@ func (s *Server) handleGetProofByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleVerifyRecord(w http.ResponseWriter, r *http.Request) {
-	var env signer.Envelope
-	if err := json.NewDecoder(r.Body).Decode(&env); err != nil {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "reading request body: %v", err)
+		return
+	}
+
+	env, profileFromBody, err := decodeVerifyEnvelopeRequest(body)
+	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid envelope: %v", err)
 		return
 	}
 
-	profile := verifier.ProfileBasic
-	if profileParam := r.URL.Query().Get("profile"); profileParam != "" {
-		switch verifier.Profile(profileParam) {
-		case verifier.ProfileBasic, verifier.ProfileStrict, verifier.ProfileFIPS:
-			profile = verifier.Profile(profileParam)
-		default:
-			writeError(w, http.StatusBadRequest, "invalid verification profile: %s", profileParam)
-			return
-		}
+	profile, err := resolveVerificationProfile(r.URL.Query().Get("profile"), profileFromBody)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid verification profile: %v", err)
+		return
 	}
 
-	result, err := s.verifier.VerifyEnvelopeWithProfile(r.Context(), &env, profile)
+	result, err := s.verifier.VerifyEnvelopeWithProfile(r.Context(), env, profile)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "verification error: %v", err)
 		return
@@ -464,30 +476,114 @@ func (s *Server) handleVerifyRecord(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleVerifyBundle(w http.ResponseWriter, r *http.Request) {
-	var bundle export.Bundle
-	if err := json.NewDecoder(r.Body).Decode(&bundle); err != nil {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "reading request body: %v", err)
+		return
+	}
+
+	bundle, profileFromBody, err := decodeVerifyBundleRequest(body)
+	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid bundle: %v", err)
 		return
 	}
 
-	profile := verifier.ProfileBasic
-	if profileParam := r.URL.Query().Get("profile"); profileParam != "" {
-		switch verifier.Profile(profileParam) {
-		case verifier.ProfileBasic, verifier.ProfileStrict, verifier.ProfileFIPS:
-			profile = verifier.Profile(profileParam)
-		default:
-			writeError(w, http.StatusBadRequest, "invalid verification profile: %s", profileParam)
-			return
-		}
+	profile, err := resolveVerificationProfile(r.URL.Query().Get("profile"), profileFromBody)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid verification profile: %v", err)
+		return
 	}
 
-	result, err := s.verifier.VerifyBundle(r.Context(), &bundle, profile)
+	result, err := s.verifier.VerifyBundle(r.Context(), bundle, profile)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "bundle verification error: %v", err)
 		return
 	}
 
 	writeJSON(w, http.StatusOK, result)
+}
+
+func decodeVerifyEnvelopeRequest(body []byte) (*signer.Envelope, string, error) {
+	if len(bytes.TrimSpace(body)) == 0 {
+		return nil, "", fmt.Errorf("request body is empty")
+	}
+
+	var req verifyEnvelopeRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		return nil, "", err
+	}
+	if req.Envelope != nil {
+		return req.Envelope, req.VerificationProfile, nil
+	}
+
+	var env signer.Envelope
+	if err := json.Unmarshal(body, &env); err != nil {
+		return nil, "", err
+	}
+	if env.PayloadType == "" && env.Payload == "" && len(env.Signatures) == 0 {
+		return nil, req.VerificationProfile, fmt.Errorf("missing envelope")
+	}
+	return &env, req.VerificationProfile, nil
+}
+
+func decodeVerifyBundleRequest(body []byte) (*export.Bundle, string, error) {
+	if len(bytes.TrimSpace(body)) == 0 {
+		return nil, "", fmt.Errorf("request body is empty")
+	}
+
+	var req verifyBundleRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		return nil, "", err
+	}
+	if req.Bundle != nil {
+		return req.Bundle, req.VerificationProfile, nil
+	}
+
+	var bundle export.Bundle
+	if err := json.Unmarshal(body, &bundle); err != nil {
+		return nil, "", err
+	}
+	return &bundle, req.VerificationProfile, nil
+}
+
+func resolveVerificationProfile(queryProfile, bodyProfile string) (verifier.Profile, error) {
+	queryProfile = strings.TrimSpace(queryProfile)
+	bodyProfile = strings.TrimSpace(bodyProfile)
+
+	switch {
+	case queryProfile == "" && bodyProfile == "":
+		return verifier.ProfileBasic, nil
+	case queryProfile == "":
+		return parseVerificationProfile(bodyProfile)
+	case bodyProfile == "":
+		return parseVerificationProfile(queryProfile)
+	default:
+		queryParsed, err := parseVerificationProfile(queryProfile)
+		if err != nil {
+			return "", err
+		}
+		bodyParsed, err := parseVerificationProfile(bodyProfile)
+		if err != nil {
+			return "", err
+		}
+		if queryParsed != bodyParsed {
+			return "", fmt.Errorf("conflicting profile values: query=%q body=%q", queryProfile, bodyProfile)
+		}
+		return queryParsed, nil
+	}
+}
+
+func parseVerificationProfile(raw string) (verifier.Profile, error) {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "", string(verifier.ProfileBasic):
+		return verifier.ProfileBasic, nil
+	case string(verifier.ProfileStrict):
+		return verifier.ProfileStrict, nil
+	case string(verifier.ProfileFIPS):
+		return verifier.ProfileFIPS, nil
+	default:
+		return "", fmt.Errorf("unsupported profile %q", raw)
+	}
 }
 
 func (s *Server) handleGetCheckpoint(w http.ResponseWriter, r *http.Request) {

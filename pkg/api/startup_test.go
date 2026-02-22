@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http/httptest"
 	"sort"
@@ -336,6 +337,72 @@ func TestServerStartupAcceptsAnchorContinuityLocal(t *testing.T) {
 	srv := api.NewServer(cfg, st, sig, []signer.Verifier{ver}, merkle.New(), nil, slog.Default())
 	if err := srv.StartupError(); err != nil {
 		t.Fatalf("unexpected startup error: %v", err)
+	}
+}
+
+func TestServerStartupRebuildWithSparseSequenceNumbersAndCheckpoint(t *testing.T) {
+	ctx := context.Background()
+
+	sig, err := signer.GenerateEd25519Signer()
+	if err != nil {
+		t.Fatalf("GenerateEd25519Signer: %v", err)
+	}
+	ver := signer.NewEd25519Verifier(sig.PublicKey())
+
+	const totalRecords = 650 // exceeds rebuild page size to exercise pagination
+	records := make([]*store.StoredRecord, 0, totalRecords)
+	tree := merkle.New()
+
+	seq := int64(1000)
+	for i := 0; i < totalRecords; i++ {
+		recordHash := mustHashString(t, fmt.Sprintf("sparse-seq-%03d", i))
+		rec := makeStartupStoredRecord(t, seq, recordHash, int64(i))
+		records = append(records, rec)
+		tree.Append([]byte(recordHash))
+		seq += 2
+	}
+
+	cp, err := merkle.NewCheckpointSigner(sig).SignCheckpoint(ctx, tree)
+	if err != nil {
+		t.Fatalf("SignCheckpoint: %v", err)
+	}
+
+	st := newStartupSequenceStore(records, &store.StoredCheckpoint{
+		TreeSize:   cp.TreeSize,
+		RootHash:   cp.RootHash,
+		Checkpoint: cp,
+	})
+
+	cfg := api.DefaultConfig()
+	srv := api.NewServer(cfg, st, sig, []signer.Verifier{ver}, merkle.New(), nil, slog.Default())
+	if err := srv.StartupError(); err != nil {
+		t.Fatalf("unexpected startup error: %v", err)
+	}
+
+	assertStartupHealthTreeSize(t, srv, totalRecords)
+}
+
+func TestServerStartupRejectsDuplicateSequenceTamper(t *testing.T) {
+	sig, err := signer.GenerateEd25519Signer()
+	if err != nil {
+		t.Fatalf("GenerateEd25519Signer: %v", err)
+	}
+	ver := signer.NewEd25519Verifier(sig.PublicKey())
+
+	records := []*store.StoredRecord{
+		makeStartupStoredRecord(t, 42, mustHashString(t, "dup-seq-a"), 0),
+		makeStartupStoredRecord(t, 42, mustHashString(t, "dup-seq-b"), 1),
+	}
+	st := newStartupSequenceStore(records, nil)
+
+	cfg := api.DefaultConfig()
+	cfg.FailOnStartupCheck = true
+	srv := api.NewServer(cfg, st, sig, []signer.Verifier{ver}, merkle.New(), nil, slog.Default())
+	if srv.StartupError() == nil {
+		t.Fatal("expected startup error for duplicate/tampered sequence numbers, got nil")
+	}
+	if !strings.Contains(srv.StartupError().Error(), "non-increasing sequence during rebuild") {
+		t.Fatalf("unexpected startup error: %v", srv.StartupError())
 	}
 }
 

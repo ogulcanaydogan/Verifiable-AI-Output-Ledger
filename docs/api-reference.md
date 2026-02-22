@@ -364,7 +364,12 @@ Verify a DSSE envelope containing a signed DecisionRecord. The server performs t
 2. **Schema validation** -- Confirms the payload conforms to the DecisionRecord v1 schema.
 3. **Record hash verification** -- Recomputes the hash from the JCS-canonicalized payload and compares it to the stored `record_hash`.
 
-Optional query parameter: `profile=basic|strict|fips`.
+Optional profile selectors:
+
+1. Query parameter: `?profile=basic|strict|fips`
+2. Request body field: `"verification_profile": "basic|strict|fips"`
+
+If both query and body profile are provided, they must match.
 
 `strict` profile enforces additional evidence requirements:
 
@@ -376,7 +381,7 @@ Optional query parameter: `profile=basic|strict|fips`.
 
 `fips` profile runs all strict checks, then additionally rejects Ed25519 signatures.
 
-**Request Body:** DSSE Envelope JSON
+**Request Body (direct envelope):** DSSE Envelope JSON
 
 ```json
 {
@@ -389,6 +394,25 @@ Optional query parameter: `profile=basic|strict|fips`.
       "timestamp": "2025-01-15T10:30:00Z"
     }
   ]
+}
+```
+
+**Request Body (wrapped):**
+
+```json
+{
+  "envelope": {
+    "payloadType": "application/vnd.vaol.decision-record.v1+json",
+    "payload": "<base64url-encoded DecisionRecord JSON>",
+    "signatures": [
+      {
+        "keyid": "vaol-ed25519-001",
+        "sig": "<base64url-encoded Ed25519 signature>",
+        "timestamp": "2025-01-15T10:30:00Z"
+      }
+    ]
+  },
+  "verification_profile": "strict"
 }
 ```
 
@@ -450,13 +474,13 @@ Optional query parameter: `profile=basic|strict|fips`.
 
 | Status | Condition |
 |--------|-----------|
-| `400 Bad Request` | Malformed envelope JSON. |
+| `400 Bad Request` | Malformed envelope JSON or invalid/conflicting profile. |
 
 ---
 
 ### POST /v1/verify/record
 
-Alias for `POST /v1/verify`. Supports the same request/response contract and optional `profile=basic|strict|fips` query parameter.
+Alias for `POST /v1/verify`. Supports the same request/response contract and profile selectors.
 
 ---
 
@@ -464,9 +488,14 @@ Alias for `POST /v1/verify`. Supports the same request/response contract and opt
 
 Verify an entire audit bundle. Each record in the bundle is individually verified for signature validity, schema conformance, hash chain integrity, and Merkle inclusion. The response provides an aggregate result.
 
-Optional query parameter: `profile=basic|strict|fips`.
+Optional profile selectors:
 
-**Request Body:** Bundle JSON
+1. Query parameter: `?profile=basic|strict|fips`
+2. Request body field: `"verification_profile": "basic|strict|fips"`
+
+If both query and body profile are provided, they must match.
+
+**Request Body (direct bundle):** Bundle JSON
 
 ```json
 {
@@ -506,6 +535,24 @@ Optional query parameter: `profile=basic|strict|fips`.
     "merkle_root_hash": "",
     "merkle_tree_size": 0
   }
+}
+```
+
+**Request Body (wrapped):**
+
+```json
+{
+  "bundle": {
+    "version": "1.0",
+    "records": [],
+    "checkpoints": [],
+    "metadata": {
+      "total_records": 0,
+      "first_sequence": 0,
+      "last_sequence": 0
+    }
+  },
+  "verification_profile": "fips"
 }
 ```
 
@@ -549,7 +596,7 @@ Optional query parameter: `profile=basic|strict|fips`.
 
 | Status | Condition |
 |--------|-----------|
-| `400 Bad Request` | Malformed bundle JSON. |
+| `400 Bad Request` | Malformed bundle JSON or invalid/conflicting profile. |
 
 ---
 

@@ -144,6 +144,27 @@ class TestVAOLClient:
         assert result["valid"] is True
         client.close()
 
+    def test_verify_with_profile(self):
+        captured: dict[str, Any] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            captured["json"] = json.loads(request.content.decode("utf-8"))
+            return httpx.Response(200, json={"valid": True, "checks": []})
+
+        client = VAOLClient.__new__(VAOLClient)
+        client.server_url = "http://localhost:8080"
+        client._client = httpx.Client(
+            transport=httpx.MockTransport(handler),
+            base_url="http://localhost:8080",
+        )
+
+        envelope = {"payloadType": "test", "payload": "dGVzdA", "signatures": []}
+        result = client.verify(envelope, verification_profile="strict")
+        assert result["valid"] is True
+        assert captured["json"]["verification_profile"] == "strict"
+        assert captured["json"]["envelope"] == envelope
+        client.close()
+
     def test_get_proof(self):
         transport = _mock_transport(
             {"/proof": {"json": {"proof_type": "inclusion", "leaf_index": 5}}}
@@ -238,6 +259,29 @@ class TestAsyncVAOLClient:
 
         result = await client.verify({"payloadType": "test", "payload": "dGVzdA", "signatures": []})
         assert result["valid"] is True
+        await client.close()
+
+    @pytest.mark.asyncio
+    async def test_verify_with_profile(self):
+        captured: dict[str, Any] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            captured["json"] = json.loads(request.content.decode("utf-8"))
+            return httpx.Response(200, json={"valid": True, "checks": []})
+
+        client = AsyncVAOLClient.__new__(AsyncVAOLClient)
+        client.server_url = "http://localhost:8080"
+        client.tenant_id = None
+        client._client = httpx.AsyncClient(
+            transport=httpx.MockTransport(handler),
+            base_url="http://localhost:8080",
+        )
+
+        envelope = {"payloadType": "test", "payload": "dGVzdA", "signatures": []}
+        result = await client.verify(envelope, verification_profile="fips")
+        assert result["valid"] is True
+        assert captured["json"]["verification_profile"] == "fips"
+        assert captured["json"]["envelope"] == envelope
         await client.close()
 
     @pytest.mark.asyncio

@@ -111,7 +111,7 @@ print(result.valid)
 | `get(request_id)` | Retrieve a record by ID |
 | `list(tenant_id, after, before, limit, cursor)` | List records with filters |
 | `get_proof(request_id)` | Get Merkle inclusion proof |
-| `verify(envelope)` | Server-side DSSE verification |
+| `verify(envelope, verification_profile=None)` | Server-side DSSE verification (`basic`, `strict`, `fips`) |
 | `export(tenant_id, after, before, limit)` | Export audit bundle |
 | `health()` | Health check |
 | `checkpoint()` | Get latest Merkle checkpoint |
