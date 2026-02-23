@@ -46,6 +46,10 @@ func DecodeSnapshotPayload(payload []byte) ([][]byte, error) {
 	}
 
 	leafCount := binary.BigEndian.Uint64(payload[8:16])
+	maxLeafCount := uint64((len(payload) - snapshotHeaderSize) / snapshotLeafHashLen)
+	if leafCount > maxLeafCount {
+		return nil, fmt.Errorf("snapshot payload size mismatch: leaf_count=%d exceeds maximum=%d", leafCount, maxLeafCount)
+	}
 	expected := snapshotHeaderSize + int(leafCount)*snapshotLeafHashLen
 	if expected != len(payload) {
 		return nil, fmt.Errorf("snapshot payload size mismatch: got=%d expected=%d", len(payload), expected)
