@@ -1,6 +1,6 @@
 # VAOL Production Profile (Helm)
 
-This profile hardens VAOL for regulated deployments by enforcing fail-closed behavior, tenant-bound authentication, startup integrity checks, and checkpoint anchoring defaults.
+This profile hardens VAOL for regulated deployments by enforcing fail-closed behavior, tenant-bound authentication, startup integrity checks, writer fencing, and checkpoint anchoring defaults.
 
 ## Goals
 
@@ -12,6 +12,8 @@ This profile hardens VAOL for regulated deployments by enforcing fail-closed beh
 6. Prefer Sigstore strict mode in connected environments (`sigstoreRekorRequired=true` in production profile).
 7. Enable strict-profile online Rekor verification for server-side verify endpoints in connected production.
 8. Optionally enable Kafka append-event publishing for high-scale downstream indexing/export pipelines.
+9. Enforce single-writer fencing using PostgreSQL advisory locks (`writerFenceMode=required`).
+10. Optionally enable periodic Merkle snapshots for faster startup restore (`merkleSnapshotEnabled=true`).
 
 ## Helm Values Mapping
 
@@ -31,6 +33,10 @@ When `profile.mode=production`, the server args are forced to:
 - `--verify-rekor-url` from `server.verifyRekorURL` (recommended `https://rekor.sigstore.dev`)
 - `--verify-rekor-timeout` from `server.verifyRekorTimeout` (default `10s`)
 - `--fail-on-startup-check` from `profile.production.failOnStartupCheck` (default `true`)
+- `--writer-fence-mode` from `server.writerFenceMode` (recommended `required`)
+- `--writer-fence-lock-id` from `server.writerFenceLockID` (must be identical across writer candidates)
+- `--merkle-snapshot-enabled` from `server.merkleSnapshotEnabled` (recommended `true` for very large ledgers)
+- `--merkle-snapshot-interval` from `server.merkleSnapshotInterval` (default `5m`, align with checkpoint cadence)
 
 ## Recommended Override File
 
@@ -70,6 +76,10 @@ server:
 
   rebuildOnStart: true
   failOnStartupCheck: true
+  writerFenceMode: required
+  writerFenceLockID: 6067779919
+  merkleSnapshotEnabled: true
+  merkleSnapshotInterval: 5m
 
 opa:
   enabled: true
@@ -93,3 +103,5 @@ helm upgrade --install vaol ./deploy/helm/vaol \
 6. `vaol verify bundle --profile strict --transcript-json ...` passes for untampered bundles and fails for tampered bundles.
 7. `POST /v1/verify?profile=strict` fails deterministically on Sigstore Rekor payload-hash mismatch when online verification is enabled.
 8. If `ingestMode=kafka`, check topic receives append events with `event_type=decision_record_appended`.
+9. Concurrent writer candidate startup with same lock ID yields one active writer and one deterministic startup failure when `writerFenceMode=required`.
+10. Startup restore time remains bounded on large ledgers with snapshots enabled (`merkleSnapshotEnabled=true`).

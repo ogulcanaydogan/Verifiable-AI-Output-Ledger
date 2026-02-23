@@ -58,6 +58,12 @@ server:
   # Startup integrity controls
   rebuildOnStart: true
   failOnStartupCheck: true
+  # Writer fencing controls (PostgreSQL advisory lock)
+  writerFenceMode: disabled
+  writerFenceLockID: 6067779919
+  # Merkle snapshot restore acceleration
+  merkleSnapshotEnabled: false
+  merkleSnapshotInterval: 5m
   # Merkle checkpoint settings
   checkpointEvery: 100
   checkpointInterval: 5m

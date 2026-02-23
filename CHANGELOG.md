@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Persistent Merkle leaf state interface** — Added optional `store.MerkleLeafStore` extension and `StoredMerkleLeaf` model to persist RFC 6962 leaf state.
 - **Startup restore from persisted Merkle leaves** — API startup now attempts to restore tree state from persisted leaves before fallback record traversal rebuild.
+- **Writer fencing interfaces and Postgres advisory-lock lease** — Added `store.WriterFenceStore`, `store.WriterFenceLease`, and PostgreSQL advisory-lock based lease acquisition/release with deterministic error semantics.
+- **Merkle snapshot restore infrastructure** — Added `store.StoredMerkleSnapshot`, `store.MerkleSnapshotStore`, deterministic snapshot payload codec (`pkg/merkle/snapshot.go`), and PostgreSQL `merkle_snapshots` persistence.
+- **Audit execution templates and evidence automation** — Added:
+  - `docs/audit/rfp-shortlist.md`
+  - `docs/audit/sow.md`
+  - `docs/audit/control-matrix.md`
+  - `docs/audit/remediation-report-template.md`
+  - `scripts/build_audit_pack.sh`
 - **Operational readiness docs for v1.0 track** — Added:
   - `docs/ha-sequencing-model.md`
   - `docs/dr-playbook.md`
@@ -22,6 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **API/gRPC append path** — REST and gRPC append handlers now persist deterministic Merkle leaf hashes (`leaf_hash = SHA-256(0x00 || record_hash)`) when the backend supports it.
+- **Startup restore path** — API startup now prefers snapshot+tail replay, then persisted leaf replay, and only then full record traversal with deterministic validation/fallback.
+- **Server runtime controls** — Added flags:
+  - `--writer-fence-mode`
+  - `--writer-fence-lock-id`
+  - `--merkle-snapshot-enabled`
+  - `--merkle-snapshot-interval`
+- **Helm production controls** — Chart values/schema/template now include writer fencing and optional Merkle snapshot settings.
 - **Threat model and architecture docs** — Updated storage and startup integrity sections to reflect persisted Merkle leaf restoration, validation, and fallback behavior.
 
 ## [0.2.25] - 2026-02-23

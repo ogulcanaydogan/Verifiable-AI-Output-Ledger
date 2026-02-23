@@ -25,27 +25,39 @@ func (s *Server) rebuildMerkleTreeFromStore(ctx context.Context) error {
 		return nil
 	}
 
-	rebuilt, err := s.rebuildMerkleTreeFromPersistentLeaves(ctx)
-	usedPersistentLeaves := err == nil
-	if err != nil {
-		switch {
-		case errors.Is(err, errMerkleLeafStoreUnavailable), errors.Is(err, errNoPersistedMerkleLeaves):
-		default:
-			s.logger.Warn("persistent Merkle leaf restore failed; falling back to record traversal", "error", err)
-		}
-		rebuilt, err = s.rebuildMerkleTreeFromRecords(ctx)
-		if err != nil {
-			return err
-		}
+	rebuilt, err := s.rebuildMerkleTreeFromSnapshotAndTail(ctx)
+	usedFastPath := err == nil
+	if err == nil {
+		s.logger.Info("rebuilt Merkle tree from persisted snapshot+tail state", "tree_size", rebuilt.Size())
 	} else {
-		s.logger.Info("rebuilt Merkle tree from persisted leaf state", "tree_size", rebuilt.Size())
+		switch {
+		case errors.Is(err, errMerkleSnapshotStoreUnavailable), errors.Is(err, errNoPersistedMerkleSnapshot):
+		default:
+			s.logger.Warn("persisted Merkle snapshot restore failed; falling back to persisted leaves", "error", err)
+		}
+
+		rebuilt, err = s.rebuildMerkleTreeFromPersistentLeaves(ctx)
+		usedFastPath = err == nil
+		if err == nil {
+			s.logger.Info("rebuilt Merkle tree from persisted leaf state", "tree_size", rebuilt.Size())
+		} else {
+			switch {
+			case errors.Is(err, errMerkleLeafStoreUnavailable), errors.Is(err, errNoPersistedMerkleLeaves):
+			default:
+				s.logger.Warn("persistent Merkle leaf restore failed; falling back to record traversal", "error", err)
+			}
+			rebuilt, err = s.rebuildMerkleTreeFromRecords(ctx)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	if err := s.validateRebuiltMerkleTree(ctx, rebuilt); err != nil {
-		if !usedPersistentLeaves {
+		if !usedFastPath {
 			return err
 		}
-		s.logger.Warn("persisted Merkle leaf state validation failed; falling back to record traversal", "error", err)
+		s.logger.Warn("fast startup restore validation failed; falling back to record traversal", "error", err)
 		rebuilt, err = s.rebuildMerkleTreeFromRecords(ctx)
 		if err != nil {
 			return err
@@ -60,9 +72,118 @@ func (s *Server) rebuildMerkleTreeFromStore(ctx context.Context) error {
 }
 
 var (
-	errMerkleLeafStoreUnavailable = errors.New("store does not implement MerkleLeafStore")
-	errNoPersistedMerkleLeaves    = errors.New("no persisted Merkle leaves found")
+	errMerkleSnapshotStoreUnavailable = errors.New("store does not implement MerkleSnapshotStore")
+	errNoPersistedMerkleSnapshot      = errors.New("no persisted Merkle snapshot found")
+	errMerkleLeafStoreUnavailable     = errors.New("store does not implement MerkleLeafStore")
+	errNoPersistedMerkleLeaves        = errors.New("no persisted Merkle leaves found")
 )
+
+func (s *Server) rebuildMerkleTreeFromSnapshotAndTail(ctx context.Context) (*merkle.Tree, error) {
+	rebuilt, snapshotSize, err := s.rebuildMerkleTreeFromSnapshot(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.replayPersistedMerkleLeafTail(ctx, rebuilt, snapshotSize); err != nil {
+		return nil, err
+	}
+	return rebuilt, nil
+}
+
+func (s *Server) rebuildMerkleTreeFromSnapshot(ctx context.Context) (*merkle.Tree, int64, error) {
+	snapshotStore, ok := s.store.(store.MerkleSnapshotStore)
+	if !ok {
+		return nil, 0, errMerkleSnapshotStoreUnavailable
+	}
+
+	snapshot, err := snapshotStore.GetLatestMerkleSnapshot(ctx)
+	if err != nil {
+		if err == store.ErrNotFound {
+			return nil, 0, errNoPersistedMerkleSnapshot
+		}
+		return nil, 0, fmt.Errorf("loading persisted Merkle snapshot: %w", err)
+	}
+	if snapshot == nil {
+		return nil, 0, fmt.Errorf("latest persisted Merkle snapshot is nil")
+	}
+
+	rebuilt, err := merkle.TreeFromSnapshotPayload(snapshot.SnapshotPayload)
+	if err != nil {
+		return nil, 0, fmt.Errorf("decoding persisted Merkle snapshot: %w", err)
+	}
+	if rebuilt.Size() != snapshot.TreeSize {
+		return nil, 0, fmt.Errorf("snapshot tree_size mismatch: metadata=%d payload=%d", snapshot.TreeSize, rebuilt.Size())
+	}
+	if snapshot.RootHash == "" {
+		return nil, 0, fmt.Errorf("snapshot root_hash is empty")
+	}
+	if rebuilt.Root() != snapshot.RootHash {
+		return nil, 0, fmt.Errorf("snapshot root mismatch: metadata=%s payload=%s", snapshot.RootHash, rebuilt.Root())
+	}
+
+	return rebuilt, snapshot.TreeSize, nil
+}
+
+func (s *Server) replayPersistedMerkleLeafTail(ctx context.Context, rebuilt *merkle.Tree, snapshotSize int64) error {
+	leafStore, ok := s.store.(store.MerkleLeafStore)
+	if !ok {
+		// Snapshot-only restore remains valid if it already matches record count.
+		recordCount, err := s.store.Count(ctx)
+		if err != nil {
+			return fmt.Errorf("counting records while validating snapshot-only restore: %w", err)
+		}
+		if recordCount == snapshotSize {
+			return nil
+		}
+		return errMerkleLeafStoreUnavailable
+	}
+
+	leafCount, err := leafStore.CountMerkleLeaves(ctx)
+	if err != nil {
+		return fmt.Errorf("counting persisted Merkle leaves for tail replay: %w", err)
+	}
+	if leafCount < snapshotSize {
+		return fmt.Errorf("persisted leaf count %d is smaller than snapshot tree size %d", leafCount, snapshotSize)
+	}
+
+	const pageSize = 1000
+	cursor := snapshotSize - 1
+	expectedLeafIndex := snapshotSize
+
+	for {
+		leaves, err := leafStore.ListMerkleLeaves(ctx, cursor, pageSize)
+		if err != nil {
+			return fmt.Errorf("listing persisted Merkle leaves for tail replay: %w", err)
+		}
+		if len(leaves) == 0 {
+			break
+		}
+
+		for _, leaf := range leaves {
+			if leaf.LeafIndex != expectedLeafIndex {
+				return fmt.Errorf("non-contiguous leaf index during tail replay: expected=%d got=%d", expectedLeafIndex, leaf.LeafIndex)
+			}
+
+			expectedLeafHash := vaolcrypto.BytesToHash(vaolcrypto.MerkleLeafHash([]byte(leaf.RecordHash)))
+			if leaf.LeafHash != expectedLeafHash {
+				return fmt.Errorf("persisted leaf hash mismatch during tail replay at index=%d", leaf.LeafIndex)
+			}
+
+			idx := rebuilt.Append([]byte(leaf.RecordHash))
+			if idx != leaf.LeafIndex {
+				return fmt.Errorf("tail replay leaf index mismatch: expected=%d rebuilt=%d", leaf.LeafIndex, idx)
+			}
+
+			cursor = leaf.LeafIndex
+			expectedLeafIndex++
+		}
+
+		if len(leaves) < pageSize {
+			break
+		}
+	}
+
+	return nil
+}
 
 func (s *Server) rebuildMerkleTreeFromRecords(ctx context.Context) (*merkle.Tree, error) {
 	rebuilt := merkle.New()

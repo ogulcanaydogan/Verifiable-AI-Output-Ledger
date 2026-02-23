@@ -51,6 +51,15 @@ type StoredMerkleLeaf struct {
 	CreatedAt      time.Time `json:"created_at"`
 }
 
+// StoredMerkleSnapshot is a persisted Merkle tree snapshot for fast startup.
+// SnapshotPayload contains packed leaf hashes (optionally compressed by store).
+type StoredMerkleSnapshot struct {
+	TreeSize        int64     `json:"tree_size"`
+	RootHash        string    `json:"root_hash"`
+	SnapshotPayload []byte    `json:"snapshot_payload"`
+	CreatedAt       time.Time `json:"created_at"`
+}
+
 // EncryptedPayload stores encrypted prompt/output blobs and lifecycle metadata.
 type EncryptedPayload struct {
 	RequestID       uuid.UUID  `json:"request_id"`
@@ -156,6 +165,18 @@ type Store interface {
 	Close() error
 }
 
+// WriterFenceLease represents ownership of a writer-fencing lease.
+// Call Release when process shutdown begins.
+type WriterFenceLease interface {
+	Release(ctx context.Context) error
+}
+
+// WriterFenceStore is an optional extension for stores that can provide
+// single-writer fencing semantics (e.g., PostgreSQL advisory locks).
+type WriterFenceStore interface {
+	AcquireWriterFence(ctx context.Context, lockID int64) (WriterFenceLease, error)
+}
+
 // MerkleLeafStore is an optional extension for stores that persist Merkle leaf hashes.
 // When implemented, API startup can restore the in-memory Merkle tree from these
 // persisted leaves without replaying full decision records.
@@ -165,8 +186,23 @@ type MerkleLeafStore interface {
 	CountMerkleLeaves(ctx context.Context) (int64, error)
 }
 
+// MerkleSnapshotStore is an optional extension for stores that persist packed
+// Merkle snapshots to reduce startup restore time for large ledgers.
+type MerkleSnapshotStore interface {
+	SaveMerkleSnapshot(ctx context.Context, snapshot *StoredMerkleSnapshot) error
+	GetLatestMerkleSnapshot(ctx context.Context) (*StoredMerkleSnapshot, error)
+}
+
 // ErrNotFound is returned when a record is not found.
 var ErrNotFound = fmt.Errorf("record not found")
 
 // ErrDuplicateRequestID is returned when a record with the same request_id already exists.
 var ErrDuplicateRequestID = fmt.Errorf("duplicate request_id")
+
+// ErrWriterFenceNotAcquired is returned when single-writer fencing is enabled
+// and lock acquisition fails because another writer owns the fence.
+var ErrWriterFenceNotAcquired = fmt.Errorf("writer fence not acquired")
+
+// ErrWriterFenceUnsupported is returned when writer fencing is requested but the
+// selected store backend does not support fencing semantics.
+var ErrWriterFenceUnsupported = fmt.Errorf("writer fence unsupported")

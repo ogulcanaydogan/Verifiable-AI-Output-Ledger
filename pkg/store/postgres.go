@@ -266,6 +266,14 @@ CREATE TABLE IF NOT EXISTS merkle_leaves (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS merkle_snapshots (
+    id BIGSERIAL PRIMARY KEY,
+    tree_size BIGINT NOT NULL,
+    root_hash TEXT NOT NULL,
+    snapshot_payload BYTEA NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS proof_index (
     proof_id TEXT PRIMARY KEY,
     request_id UUID NOT NULL REFERENCES decision_records(request_id) ON DELETE CASCADE,
@@ -316,6 +324,7 @@ ALTER TABLE encrypted_payloads ADD COLUMN IF NOT EXISTS rotated_at TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS idx_records_tenant_ts ON decision_records(tenant_id, timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_records_hash ON decision_records(record_hash);
 CREATE INDEX IF NOT EXISTS idx_merkle_leaves_sequence ON merkle_leaves(sequence_number);
+CREATE INDEX IF NOT EXISTS idx_merkle_snapshots_tree_size ON merkle_snapshots(tree_size DESC);
 CREATE INDEX IF NOT EXISTS idx_proof_request_id ON proof_index(request_id);
 CREATE INDEX IF NOT EXISTS idx_encrypted_retain_until ON encrypted_payloads(retain_until);
 CREATE INDEX IF NOT EXISTS idx_tombstones_tenant_deleted_at ON payload_tombstones(tenant_id, deleted_at DESC);

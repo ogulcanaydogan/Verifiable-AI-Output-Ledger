@@ -16,6 +16,7 @@ type MemoryStore struct {
 	records      []*StoredRecord
 	byReqID      map[uuid.UUID]*StoredRecord
 	merkleLeaves []*StoredMerkleLeaf
+	snapshots    []*StoredMerkleSnapshot
 	proofs       map[string]*StoredProof
 	checkpoints  []*StoredCheckpoint
 	encrypted    map[uuid.UUID]*EncryptedPayload
@@ -30,6 +31,7 @@ func NewMemoryStore() *MemoryStore {
 		records:      make([]*StoredRecord, 0, 1024),
 		byReqID:      make(map[uuid.UUID]*StoredRecord),
 		merkleLeaves: make([]*StoredMerkleLeaf, 0, 1024),
+		snapshots:    make([]*StoredMerkleSnapshot, 0, 16),
 		proofs:       make(map[string]*StoredProof),
 		checkpoints:  make([]*StoredCheckpoint, 0, 64),
 		encrypted:    make(map[uuid.UUID]*EncryptedPayload),
@@ -255,6 +257,44 @@ func (m *MemoryStore) CountMerkleLeaves(_ context.Context) (int64, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return int64(len(m.merkleLeaves)), nil
+}
+
+func (m *MemoryStore) SaveMerkleSnapshot(_ context.Context, snapshot *StoredMerkleSnapshot) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if snapshot == nil {
+		return fmt.Errorf("snapshot is required")
+	}
+	if snapshot.TreeSize < 0 {
+		return fmt.Errorf("tree_size must be non-negative")
+	}
+	if snapshot.RootHash == "" {
+		return fmt.Errorf("root_hash is required")
+	}
+	if len(snapshot.SnapshotPayload) == 0 {
+		return fmt.Errorf("snapshot_payload is required")
+	}
+
+	cp := *snapshot
+	cp.SnapshotPayload = append([]byte(nil), snapshot.SnapshotPayload...)
+	if cp.CreatedAt.IsZero() {
+		cp.CreatedAt = time.Now().UTC()
+	}
+	m.snapshots = append(m.snapshots, &cp)
+	return nil
+}
+
+func (m *MemoryStore) GetLatestMerkleSnapshot(_ context.Context) (*StoredMerkleSnapshot, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	if len(m.snapshots) == 0 {
+		return nil, ErrNotFound
+	}
+	latest := *m.snapshots[len(m.snapshots)-1]
+	latest.SnapshotPayload = append([]byte(nil), latest.SnapshotPayload...)
+	return &latest, nil
 }
 
 func (m *MemoryStore) PutEncryptedPayload(_ context.Context, payload *EncryptedPayload) error {

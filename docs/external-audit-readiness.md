@@ -48,3 +48,23 @@ Provide to auditor:
 3. Public remediation report produced for open-source consumers.
 4. v1.0 tag gated on completed remediation evidence.
 
+## 5. Execution Artifacts and Automation
+
+Execution templates:
+
+1. `docs/audit/rfp-shortlist.md`
+2. `docs/audit/sow.md`
+3. `docs/audit/control-matrix.md`
+4. `docs/audit/remediation-report-template.md`
+
+Evidence packaging helper:
+
+```bash
+./scripts/build_audit_pack.sh
+```
+
+To include a full local verification matrix in the package:
+
+```bash
+VAOL_AUDIT_RUN_MATRIX=1 ./scripts/build_audit_pack.sh
+```

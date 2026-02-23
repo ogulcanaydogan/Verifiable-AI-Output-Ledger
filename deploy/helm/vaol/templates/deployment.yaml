@@ -57,6 +57,10 @@ spec:
             - --anchor-continuity-required={{ $anchorContinuityRequired }}
             - --rebuild-on-start={{ .Values.server.rebuildOnStart }}
             - --fail-on-startup-check={{ $failOnStartupCheck }}
+            - --writer-fence-mode={{ .Values.server.writerFenceMode }}
+            - --writer-fence-lock-id={{ .Values.server.writerFenceLockID }}
+            - --merkle-snapshot-enabled={{ .Values.server.merkleSnapshotEnabled }}
+            - --merkle-snapshot-interval={{ .Values.server.merkleSnapshotInterval }}
             {{- if .Values.server.jwtIssuer }}
             - --jwt-issuer={{ .Values.server.jwtIssuer }}
             {{- end }}
