@@ -69,7 +69,8 @@ func newTestEnv(t *testing.T) *testEnv {
 
 	go func() {
 		if err := srv.Serve(lis); err != nil {
-			// bufconn listener is closed when test ends; ignore.
+			// bufconn listener is closed when test ends; ignore and exit goroutine.
+			return
 		}
 	}()
 
