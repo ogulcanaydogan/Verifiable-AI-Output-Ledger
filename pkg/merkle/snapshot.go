@@ -50,12 +50,12 @@ func DecodeSnapshotPayload(payload []byte) ([][]byte, error) {
 	if leafCount > maxLeafCount {
 		return nil, fmt.Errorf("snapshot payload size mismatch: leaf_count=%d exceeds maximum=%d", leafCount, maxLeafCount)
 	}
-	expected := snapshotHeaderSize + int(leafCount)*snapshotLeafHashLen
-	if expected != len(payload) {
+	expected := uint64(snapshotHeaderSize) + leafCount*uint64(snapshotLeafHashLen)
+	if expected != uint64(len(payload)) {
 		return nil, fmt.Errorf("snapshot payload size mismatch: got=%d expected=%d", len(payload), expected)
 	}
 
-	leafHashes := make([][]byte, 0, leafCount)
+	leafHashes := make([][]byte, 0)
 	offset := snapshotHeaderSize
 	for i := uint64(0); i < leafCount; i++ {
 		hash := make([]byte, snapshotLeafHashLen)
