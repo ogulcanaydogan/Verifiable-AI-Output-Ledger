@@ -40,16 +40,19 @@ Do not run active/active writers against one global sequence stream without expl
 
 Before declaring a deployment v1.0-ready, enforce:
 
-1. Single writer service endpoint (load balancer points append routes to one active backend).
-2. Orchestration policy that prevents concurrent writer promotion.
-3. Startup fail-closed (`--fail-on-startup-check=true`) on all writer candidates.
-4. Anchor continuity checks enabled in production (`--anchor-continuity-required=true`).
+1. Runtime writer fencing enabled on all writer candidates:
+   1. `--writer-fence-mode=required`
+   2. shared `--writer-fence-lock-id=<fixed-int64>` for the same ledger.
+2. Single writer service endpoint (load balancer points append routes to one active backend).
+3. Orchestration policy that prevents concurrent writer promotion.
+4. Startup fail-closed (`--fail-on-startup-check=true`) on all writer candidates.
+5. Anchor continuity checks enabled in production (`--anchor-continuity-required=true`).
 
 ## 5. Failover Procedure (Writer)
 
 1. Drain traffic from current writer.
 2. Promote passive node.
-3. Start promoted node with startup checks enabled.
+3. Start promoted node with startup checks and required writer fencing enabled.
 4. Validate:
    1. `GET /v1/health` returns `ok`
    2. latest checkpoint root and tree size are monotonic
@@ -73,6 +76,12 @@ SELECT tree_size, root_hash, created_at
 FROM merkle_checkpoints
 ORDER BY id DESC
 LIMIT 1;
+
+-- Latest Merkle snapshot (if enabled)
+SELECT tree_size, root_hash, created_at
+FROM merkle_snapshots
+ORDER BY id DESC
+LIMIT 1;
 ```
 
 ## 7. Acceptance Tests
@@ -84,4 +93,3 @@ For HA sign-off:
 3. Verify no chain break and no leaf index divergence.
 4. Verify checkpoint continuity across failover boundary.
 5. Verify auditor bundle before/after failover in strict mode.
-

@@ -15,6 +15,7 @@ Default targets (adjust per tenant/regulatory profile):
 2. Object storage versioning/retention lock enabled (if encrypted blobs are used).
 3. Signed checkpoints persisted and anchored.
 4. Startup fail-closed checks enabled.
+5. If enabled, Merkle snapshots are persisted (`merkle_snapshots` table).
 
 ## 3. Incident Classes
 
@@ -39,7 +40,8 @@ Default targets (adjust per tenant/regulatory profile):
 1. Start `vaol-server` with:
    1. `--fail-on-startup-check=true`
    2. `--anchor-continuity-required=true`
-   3. production auth/policy flags
+   3. `--writer-fence-mode=required`
+   4. production auth/policy flags
 2. Confirm startup integrity checks pass.
 
 ### Step 4: Verify ledger continuity
@@ -57,7 +59,8 @@ vaol verify bundle /tmp/dr-bundle.json --profile strict --transcript-json /tmp/d
 
 1. Run one append smoke test.
 2. Confirm record is retrievable and proof validates.
-3. Re-enable append traffic.
+3. Confirm writer fence ownership on the active node (`required` mode has no startup fence errors).
+4. Re-enable append traffic.
 
 ## 5. Post-Incident Evidence
 
@@ -75,5 +78,5 @@ Do not resume writes if any of these fail:
 1. Startup root/checkpoint mismatch
 2. Signature verification failure on latest checkpoint
 3. Anchor continuity mismatch when required
-4. Strict bundle verification failure on untampered bundle
-
+4. Writer fence acquisition failure in required mode
+5. Strict bundle verification failure on untampered bundle

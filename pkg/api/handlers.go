@@ -789,7 +789,58 @@ func (s *Server) maybePersistCheckpoint(ctx context.Context, seq int64) error {
 		return fmt.Errorf("saving checkpoint: %w", err)
 	}
 
+	if err := s.maybePersistMerkleSnapshotLocked(ctx, cp, now, seq); err != nil {
+		return err
+	}
+
 	s.lastCheckpointAt = now
+	return nil
+}
+
+func (s *Server) maybePersistMerkleSnapshotLocked(
+	ctx context.Context,
+	cp *merkle.Checkpoint,
+	now time.Time,
+	seq int64,
+) error {
+	if !s.config.MerkleSnapshotEnabled {
+		return nil
+	}
+
+	interval := s.config.MerkleSnapshotInterval
+	if interval <= 0 {
+		interval = s.config.CheckpointInterval
+		if interval <= 0 {
+			interval = 5 * time.Minute
+		}
+	}
+	if !s.lastSnapshotAt.IsZero() && now.Sub(s.lastSnapshotAt) < interval && seq != 0 {
+		return nil
+	}
+
+	snapshotStore, ok := s.store.(store.MerkleSnapshotStore)
+	if !ok {
+		if !s.snapshotWarned {
+			s.logger.Warn("merkle snapshot persistence enabled but store does not implement MerkleSnapshotStore")
+			s.snapshotWarned = true
+		}
+		return nil
+	}
+
+	payload, err := merkle.SnapshotPayloadFromTree(s.tree)
+	if err != nil {
+		return fmt.Errorf("encoding merkle snapshot payload: %w", err)
+	}
+
+	if err := snapshotStore.SaveMerkleSnapshot(ctx, &store.StoredMerkleSnapshot{
+		TreeSize:        cp.TreeSize,
+		RootHash:        cp.RootHash,
+		SnapshotPayload: payload,
+	}); err != nil {
+		return fmt.Errorf("saving merkle snapshot: %w", err)
+	}
+
+	s.lastSnapshotAt = now
 	return nil
 }
 

@@ -183,6 +183,27 @@
           "default": true,
           "description": "Fail startup if integrity check fails"
         },
+        "writerFenceMode": {
+          "type": "string",
+          "enum": ["disabled", "best-effort", "required"],
+          "default": "disabled",
+          "description": "Single-writer fencing mode using PostgreSQL advisory lock"
+        },
+        "writerFenceLockID": {
+          "type": "integer",
+          "default": 6067779919,
+          "description": "PostgreSQL advisory lock ID used for writer fencing"
+        },
+        "merkleSnapshotEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Persist packed Merkle snapshots for faster startup restore"
+        },
+        "merkleSnapshotInterval": {
+          "type": "string",
+          "default": "5m",
+          "description": "Minimum interval between persisted Merkle snapshots (Go duration)"
+        },
         "checkpointEvery": {
           "type": "integer",
           "minimum": 1,

@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -32,6 +33,16 @@ var (
 	version = "dev"
 	commit  = "none"
 	date    = "unknown"
+)
+
+type writerFenceMode string
+
+const (
+	writerFenceModeDisabled   writerFenceMode = "disabled"
+	writerFenceModeBestEffort writerFenceMode = "best-effort"
+	writerFenceModeRequired   writerFenceMode = "required"
+
+	defaultWriterFenceLockID int64 = 6067779919
 )
 
 func main() {
@@ -70,6 +81,8 @@ func main() {
 		verifyRekorTimeout    = flag.Duration("verify-rekor-timeout", 10*time.Second, "timeout for strict online Rekor verification")
 		checkpointEvery       = flag.Int64("checkpoint-every", 100, "persist a signed checkpoint every N records")
 		checkpointInterval    = flag.Duration("checkpoint-interval", 5*time.Minute, "persist a signed checkpoint at least every duration")
+		merkleSnapshotEnabled = flag.Bool("merkle-snapshot-enabled", false, "persist packed Merkle snapshots to accelerate startup restore")
+		merkleSnapshotIntv    = flag.Duration("merkle-snapshot-interval", 5*time.Minute, "persist Merkle snapshots at least this often when enabled")
 		anchorMode            = flag.String("anchor-mode", "local", "checkpoint anchoring mode: off, local, http")
 		anchorURL             = flag.String("anchor-url", "", "checkpoint anchoring endpoint URL (required when anchor-mode=http)")
 		anchorContinuityReq   = flag.Bool("anchor-continuity-required", false, "fail startup if latest checkpoint anchor continuity cannot be verified")
@@ -81,6 +94,8 @@ func main() {
 		ingestKafkaClient     = flag.String("ingest-kafka-client-id", "vaol-server", "Kafka client ID for ingest publisher")
 		ingestKafkaRequired   = flag.Bool("ingest-kafka-required", false, "fail startup if ingest publisher initialization fails")
 		ingestPublishTimeout  = flag.Duration("ingest-publish-timeout", 2*time.Second, "timeout per ingest event publish")
+		writerFenceModeRaw    = flag.String("writer-fence-mode", string(writerFenceModeDisabled), "writer fencing mode: disabled, best-effort, required")
+		writerFenceLockID     = flag.Int64("writer-fence-lock-id", defaultWriterFenceLockID, "advisory lock ID for PostgreSQL writer fencing")
 	)
 	flag.Parse()
 	*verifyRevocationsFile = resolveVerifyRevocationsFile(*verifyRevocationsFile)
@@ -106,6 +121,21 @@ func main() {
 		logger.Info("using in-memory store (data will not persist)")
 	}
 	defer st.Close()
+
+	writerFenceLease, err := acquireWriterFence(context.Background(), st, *writerFenceModeRaw, *writerFenceLockID, logger)
+	if err != nil {
+		logger.Error("writer fence initialization failed", "error", err, "mode", *writerFenceModeRaw, "lock_id", *writerFenceLockID)
+		os.Exit(1)
+	}
+	if writerFenceLease != nil {
+		defer func() {
+			releaseCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := writerFenceLease.Release(releaseCtx); err != nil {
+				logger.Error("writer fence release failed", "error", err)
+			}
+		}()
+	}
 
 	sigstoreCfg := signer.DefaultSigstoreConfig()
 	if *sigstoreFulcioURL != "" {
@@ -189,6 +219,8 @@ func main() {
 		VerifyRekorTimeout:          *verifyRekorTimeout,
 		CheckpointEvery:             *checkpointEvery,
 		CheckpointInterval:          *checkpointInterval,
+		MerkleSnapshotEnabled:       *merkleSnapshotEnabled,
+		MerkleSnapshotInterval:      *merkleSnapshotIntv,
 		AnchorMode:                  *anchorMode,
 		AnchorURL:                   *anchorURL,
 		AnchorContinuityRequired:    *anchorContinuityReq,
@@ -370,4 +402,57 @@ func resolveVerifyRevocationsFile(flagValue string) string {
 		return value
 	}
 	return strings.TrimSpace(os.Getenv("VAOL_VERIFY_REVOCATIONS_FILE"))
+}
+
+func parseWriterFenceMode(raw string) (writerFenceMode, error) {
+	mode := writerFenceMode(strings.ToLower(strings.TrimSpace(raw)))
+	switch mode {
+	case writerFenceModeDisabled, writerFenceModeBestEffort, writerFenceModeRequired:
+		return mode, nil
+	default:
+		return "", fmt.Errorf("invalid writer fence mode %q (allowed: disabled, best-effort, required)", raw)
+	}
+}
+
+func acquireWriterFence(
+	ctx context.Context,
+	candidate any,
+	modeRaw string,
+	lockID int64,
+	logger *slog.Logger,
+) (store.WriterFenceLease, error) {
+	mode, err := parseWriterFenceMode(modeRaw)
+	if err != nil {
+		return nil, err
+	}
+	if mode == writerFenceModeDisabled {
+		return nil, nil
+	}
+	if logger == nil {
+		logger = slog.Default()
+	}
+
+	fenceStore, ok := candidate.(store.WriterFenceStore)
+	if !ok {
+		if mode == writerFenceModeBestEffort {
+			logger.Warn("writer fencing not supported by current store backend; continuing in best-effort mode")
+			return nil, nil
+		}
+		return nil, store.ErrWriterFenceUnsupported
+	}
+
+	lease, err := fenceStore.AcquireWriterFence(ctx, lockID)
+	if err != nil {
+		if mode == writerFenceModeBestEffort {
+			logger.Warn("writer fence acquisition failed in best-effort mode; continuing without fence", "error", err, "lock_id", lockID)
+			return nil, nil
+		}
+		if errors.Is(err, store.ErrWriterFenceNotAcquired) {
+			return nil, fmt.Errorf("required writer fence not acquired: %w", err)
+		}
+		return nil, fmt.Errorf("acquiring writer fence: %w", err)
+	}
+
+	logger.Info("writer fence acquired", "lock_id", lockID, "mode", mode)
+	return lease, nil
 }

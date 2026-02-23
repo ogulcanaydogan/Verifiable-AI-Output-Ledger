@@ -28,6 +28,15 @@ CREATE TABLE IF NOT EXISTS merkle_checkpoints (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Packed+compressed Merkle leaf snapshot payloads for faster startup restore.
+CREATE TABLE IF NOT EXISTS merkle_snapshots (
+    id BIGSERIAL PRIMARY KEY,
+    tree_size BIGINT NOT NULL,
+    root_hash TEXT NOT NULL,
+    snapshot_payload BYTEA NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Encrypted prompt/output blobs (used when output.mode = "encrypted").
 CREATE TABLE IF NOT EXISTS encrypted_payloads (
     request_id UUID PRIMARY KEY REFERENCES decision_records(request_id),
@@ -73,6 +82,7 @@ ALTER TABLE encrypted_payloads ADD COLUMN IF NOT EXISTS rotated_at TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS idx_records_tenant_ts ON decision_records(tenant_id, timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_records_hash ON decision_records(record_hash);
 CREATE INDEX IF NOT EXISTS idx_checkpoints_tree_size ON merkle_checkpoints(tree_size DESC);
+CREATE INDEX IF NOT EXISTS idx_merkle_snapshots_tree_size ON merkle_snapshots(tree_size DESC);
 CREATE INDEX IF NOT EXISTS idx_encrypted_retain_until ON encrypted_payloads(retain_until);
 CREATE INDEX IF NOT EXISTS idx_tombstones_tenant_deleted_at ON payload_tombstones(tenant_id, deleted_at DESC);
 CREATE INDEX IF NOT EXISTS idx_key_rotation_executed_at ON key_rotation_events(executed_at DESC);

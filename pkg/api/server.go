@@ -48,6 +48,8 @@ type Config struct {
 	JWTClockSkew                time.Duration `json:"jwt_clock_skew"`
 	RebuildOnStart              bool          `json:"rebuild_on_start"`
 	FailOnStartupCheck          bool          `json:"fail_on_startup_check"`
+	MerkleSnapshotEnabled       bool          `json:"merkle_snapshot_enabled"`
+	MerkleSnapshotInterval      time.Duration `json:"merkle_snapshot_interval"`
 	IngestMode                  string        `json:"ingest_mode"` // off, kafka
 	IngestKafkaBrokers          []string      `json:"ingest_kafka_brokers"`
 	IngestKafkaTopic            string        `json:"ingest_kafka_topic"`
@@ -77,6 +79,8 @@ func DefaultConfig() Config {
 		JWTClockSkew:             30 * time.Second,
 		RebuildOnStart:           true,
 		FailOnStartupCheck:       true,
+		MerkleSnapshotEnabled:    false,
+		MerkleSnapshotInterval:   5 * time.Minute,
 		IngestMode:               "off",
 		IngestPublishTimeout:     2 * time.Second,
 	}
@@ -97,7 +101,9 @@ type Server struct {
 	anchorClient     merkle.AnchorClient
 	ingestPublisher  ingest.Publisher
 	lastCheckpointAt time.Time
+	lastSnapshotAt   time.Time
 	checkpointMu     sync.Mutex
+	snapshotWarned   bool
 	startupErr       error
 	logger           *slog.Logger
 	http             *http.Server
@@ -128,6 +134,7 @@ func NewServer(
 		checkpointSigner: merkle.NewCheckpointSigner(sig),
 		anchorClient:     newAnchorClient(cfg),
 		lastCheckpointAt: time.Now().UTC(),
+		lastSnapshotAt:   time.Time{},
 		logger:           logger,
 	}
 

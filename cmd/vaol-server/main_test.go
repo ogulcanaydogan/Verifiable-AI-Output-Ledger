@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ogulcanaydogan/vaol/pkg/signer"
+	"github.com/ogulcanaydogan/vaol/pkg/store"
 )
 
 func TestBuildSignerEd25519Ephemeral(t *testing.T) {
@@ -147,5 +151,151 @@ func TestParseCommaSeparatedNonEmpty(t *testing.T) {
 		if got[i] != want[i] {
 			t.Fatalf("index %d mismatch: got %q want %q", i, got[i], want[i])
 		}
+	}
+}
+
+type fakeWriterFenceLease struct {
+	releases int
+	err      error
+}
+
+func (l *fakeWriterFenceLease) Release(_ context.Context) error {
+	l.releases++
+	return l.err
+}
+
+type fakeWriterFenceStore struct {
+	lease      store.WriterFenceLease
+	err        error
+	calls      int
+	lastLockID int64
+}
+
+func (s *fakeWriterFenceStore) AcquireWriterFence(_ context.Context, lockID int64) (store.WriterFenceLease, error) {
+	s.calls++
+	s.lastLockID = lockID
+	return s.lease, s.err
+}
+
+func TestParseWriterFenceMode(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		raw     string
+		want    writerFenceMode
+		wantErr bool
+	}{
+		{raw: "disabled", want: writerFenceModeDisabled},
+		{raw: "best-effort", want: writerFenceModeBestEffort},
+		{raw: "required", want: writerFenceModeRequired},
+		{raw: " ReQuIrEd ", want: writerFenceModeRequired},
+		{raw: "nope", wantErr: true},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.raw, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := parseWriterFenceMode(tc.raw)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("expected error for %q", tc.raw)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error for %q: %v", tc.raw, err)
+			}
+			if got != tc.want {
+				t.Fatalf("mode = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestAcquireWriterFenceDisabled(t *testing.T) {
+	t.Parallel()
+
+	lease, err := acquireWriterFence(context.Background(), struct{}{}, "disabled", 1, slog.Default())
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if lease != nil {
+		t.Fatal("expected nil lease")
+	}
+}
+
+func TestAcquireWriterFenceRequiredWithoutSupport(t *testing.T) {
+	t.Parallel()
+
+	lease, err := acquireWriterFence(context.Background(), struct{}{}, "required", 1, slog.Default())
+	if !errors.Is(err, store.ErrWriterFenceUnsupported) {
+		t.Fatalf("expected ErrWriterFenceUnsupported, got %v", err)
+	}
+	if lease != nil {
+		t.Fatal("expected nil lease")
+	}
+}
+
+func TestAcquireWriterFenceBestEffortWithoutSupport(t *testing.T) {
+	t.Parallel()
+
+	lease, err := acquireWriterFence(context.Background(), struct{}{}, "best-effort", 1, slog.Default())
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if lease != nil {
+		t.Fatal("expected nil lease")
+	}
+}
+
+func TestAcquireWriterFenceRequiredNotAcquired(t *testing.T) {
+	t.Parallel()
+
+	fakeStore := &fakeWriterFenceStore{err: store.ErrWriterFenceNotAcquired}
+	lease, err := acquireWriterFence(context.Background(), fakeStore, "required", 77, slog.Default())
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "required writer fence not acquired") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if lease != nil {
+		t.Fatal("expected nil lease")
+	}
+	if fakeStore.calls != 1 || fakeStore.lastLockID != 77 {
+		t.Fatalf("unexpected acquire invocation: calls=%d lockID=%d", fakeStore.calls, fakeStore.lastLockID)
+	}
+}
+
+func TestAcquireWriterFenceBestEffortNotAcquired(t *testing.T) {
+	t.Parallel()
+
+	fakeStore := &fakeWriterFenceStore{err: store.ErrWriterFenceNotAcquired}
+	lease, err := acquireWriterFence(context.Background(), fakeStore, "best-effort", 55, slog.Default())
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if lease != nil {
+		t.Fatal("expected nil lease")
+	}
+}
+
+func TestAcquireWriterFenceRequiredSuccess(t *testing.T) {
+	t.Parallel()
+
+	expectedLease := &fakeWriterFenceLease{}
+	fakeStore := &fakeWriterFenceStore{lease: expectedLease}
+
+	lease, err := acquireWriterFence(context.Background(), fakeStore, "required", 999, slog.Default())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if lease == nil {
+		t.Fatal("expected non-nil lease")
+	}
+	if lease != expectedLease {
+		t.Fatal("returned lease does not match expected lease")
 	}
 }

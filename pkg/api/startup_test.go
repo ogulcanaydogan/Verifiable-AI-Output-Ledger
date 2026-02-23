@@ -26,6 +26,7 @@ var errStartupStoreUnsupported = errors.New("startup test store: unsupported ope
 type startupSequenceStore struct {
 	records    []*store.StoredRecord
 	leaves     []*store.StoredMerkleLeaf
+	snapshots  []*store.StoredMerkleSnapshot
 	checkpoint *store.StoredCheckpoint
 	listErr    error
 }
@@ -57,6 +58,29 @@ func startupLeavesFromRecords(records []*store.StoredRecord) []*store.StoredMerk
 		return leaves[i].LeafIndex < leaves[j].LeafIndex
 	})
 	return leaves
+}
+
+func startupSnapshotFromRecords(t testing.TB, records []*store.StoredRecord, treeSize int64) *store.StoredMerkleSnapshot {
+	t.Helper()
+
+	tree := merkle.New()
+	for i, rec := range records {
+		if int64(i) >= treeSize {
+			break
+		}
+		tree.Append([]byte(rec.RecordHash))
+	}
+
+	payload, err := merkle.SnapshotPayloadFromTree(tree)
+	if err != nil {
+		t.Fatalf("SnapshotPayloadFromTree: %v", err)
+	}
+
+	return &store.StoredMerkleSnapshot{
+		TreeSize:        tree.Size(),
+		RootHash:        tree.Root(),
+		SnapshotPayload: payload,
+	}
 }
 
 func (s *startupSequenceStore) Append(_ context.Context, _ *store.StoredRecord) (int64, error) {
@@ -149,6 +173,25 @@ func (s *startupSequenceStore) ListMerkleLeaves(_ context.Context, cursor int64,
 
 func (s *startupSequenceStore) CountMerkleLeaves(_ context.Context) (int64, error) {
 	return int64(len(s.leaves)), nil
+}
+
+func (s *startupSequenceStore) SaveMerkleSnapshot(_ context.Context, snapshot *store.StoredMerkleSnapshot) error {
+	if snapshot == nil {
+		return errStartupStoreUnsupported
+	}
+	dup := *snapshot
+	dup.SnapshotPayload = append([]byte(nil), snapshot.SnapshotPayload...)
+	s.snapshots = append(s.snapshots, &dup)
+	return nil
+}
+
+func (s *startupSequenceStore) GetLatestMerkleSnapshot(_ context.Context) (*store.StoredMerkleSnapshot, error) {
+	if len(s.snapshots) == 0 {
+		return nil, store.ErrNotFound
+	}
+	dup := *s.snapshots[len(s.snapshots)-1]
+	dup.SnapshotPayload = append([]byte(nil), dup.SnapshotPayload...)
+	return &dup, nil
 }
 
 func (s *startupSequenceStore) PutEncryptedPayload(_ context.Context, _ *store.EncryptedPayload) error {
@@ -270,6 +313,61 @@ func TestServerStartupFallsBackToRecordTraversalWhenPersistedLeavesInvalid(t *te
 	st.leaves = startupLeavesFromRecords(records)
 	// Corrupt persisted leaf state to force fallback path.
 	st.leaves = st.leaves[:1]
+
+	cfg := api.DefaultConfig()
+	srv := api.NewServer(cfg, st, sig, []signer.Verifier{ver}, merkle.New(), nil, slog.Default())
+	if err := srv.StartupError(); err != nil {
+		t.Fatalf("unexpected startup error: %v", err)
+	}
+
+	assertStartupHealthTreeSize(t, srv, 2)
+}
+
+func TestServerStartupUsesSnapshotAndTailReplay(t *testing.T) {
+	sig, err := signer.GenerateEd25519Signer()
+	if err != nil {
+		t.Fatalf("GenerateEd25519Signer: %v", err)
+	}
+	ver := signer.NewEd25519Verifier(sig.PublicKey())
+
+	records := []*store.StoredRecord{
+		makeStartupStoredRecord(t, 1, mustHashString(t, "snapshot-tail-1"), 0),
+		makeStartupStoredRecord(t, 2, mustHashString(t, "snapshot-tail-2"), 1),
+		makeStartupStoredRecord(t, 3, mustHashString(t, "snapshot-tail-3"), 2),
+	}
+	st := newStartupSequenceStore(records, nil)
+	st.leaves = startupLeavesFromRecords(records)
+	st.snapshots = []*store.StoredMerkleSnapshot{
+		startupSnapshotFromRecords(t, records, 2),
+	}
+	st.listErr = errors.New("record traversal should not be called")
+
+	cfg := api.DefaultConfig()
+	srv := api.NewServer(cfg, st, sig, []signer.Verifier{ver}, merkle.New(), nil, slog.Default())
+	if err := srv.StartupError(); err != nil {
+		t.Fatalf("unexpected startup error: %v", err)
+	}
+
+	assertStartupHealthTreeSize(t, srv, 3)
+}
+
+func TestServerStartupFallsBackFromCorruptSnapshotToLeafRestore(t *testing.T) {
+	sig, err := signer.GenerateEd25519Signer()
+	if err != nil {
+		t.Fatalf("GenerateEd25519Signer: %v", err)
+	}
+	ver := signer.NewEd25519Verifier(sig.PublicKey())
+
+	records := []*store.StoredRecord{
+		makeStartupStoredRecord(t, 1, mustHashString(t, "snapshot-fallback-1"), 0),
+		makeStartupStoredRecord(t, 2, mustHashString(t, "snapshot-fallback-2"), 1),
+	}
+	st := newStartupSequenceStore(records, nil)
+	st.leaves = startupLeavesFromRecords(records)
+	snapshot := startupSnapshotFromRecords(t, records, 2)
+	snapshot.SnapshotPayload[0] = 'X' // Corrupt payload magic.
+	st.snapshots = []*store.StoredMerkleSnapshot{snapshot}
+	st.listErr = errors.New("record traversal should not be called")
 
 	cfg := api.DefaultConfig()
 	srv := api.NewServer(cfg, st, sig, []signer.Verifier{ver}, merkle.New(), nil, slog.Default())

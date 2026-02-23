@@ -329,6 +329,34 @@ func TestMemoryStoreMerkleLeafRejectsGap(t *testing.T) {
 	}
 }
 
+func TestMemoryStoreMerkleSnapshotRoundTrip(t *testing.T) {
+	ctx := context.Background()
+	s := NewMemoryStore()
+
+	snapshot := &StoredMerkleSnapshot{
+		TreeSize:        2,
+		RootHash:        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		SnapshotPayload: []byte("snapshot-bytes"),
+	}
+	if err := s.SaveMerkleSnapshot(ctx, snapshot); err != nil {
+		t.Fatalf("SaveMerkleSnapshot: %v", err)
+	}
+
+	got, err := s.GetLatestMerkleSnapshot(ctx)
+	if err != nil {
+		t.Fatalf("GetLatestMerkleSnapshot: %v", err)
+	}
+	if got.TreeSize != snapshot.TreeSize {
+		t.Fatalf("tree size mismatch: got %d want %d", got.TreeSize, snapshot.TreeSize)
+	}
+	if got.RootHash != snapshot.RootHash {
+		t.Fatalf("root hash mismatch: got %s want %s", got.RootHash, snapshot.RootHash)
+	}
+	if string(got.SnapshotPayload) != string(snapshot.SnapshotPayload) {
+		t.Fatalf("snapshot payload mismatch: got %q want %q", string(got.SnapshotPayload), string(snapshot.SnapshotPayload))
+	}
+}
+
 func TestMemoryStoreEncryptedPayloadLifecycle(t *testing.T) {
 	ctx := context.Background()
 	s := NewMemoryStore()
