@@ -10,6 +10,10 @@ pip install vaol
 
 # With OpenAI auto-instrumentation support
 pip install "vaol[openai]"
+
+# Optional providers
+pip install "vaol[anthropic]"
+pip install "vaol[litellm]"
 ```
 
 ## Quick start
@@ -50,6 +54,39 @@ instrument_openai(openai, vaol_client=vaol, tenant_id="acme-corp", subject="user
 # Every chat completion now automatically emits a VAOL decision record
 response = openai.chat.completions.create(
     model="gpt-4o",
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+```
+
+### Anthropic auto-instrumentation
+
+```python
+import anthropic
+from vaol import VAOLClient, instrument_anthropic
+
+vaol = VAOLClient(server_url="http://localhost:8080", tenant_id="acme-corp")
+client = anthropic.Anthropic()
+
+instrument_anthropic(client, vaol_client=vaol, tenant_id="acme-corp", subject="user-42")
+response = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=256,
+    system="You are a helpful assistant.",
+    messages=[{"role": "user", "content": "Summarize this report."}],
+)
+```
+
+### LiteLLM auto-instrumentation
+
+```python
+import litellm
+from vaol import VAOLClient, instrument_litellm
+
+vaol = VAOLClient(server_url="http://localhost:8080", tenant_id="acme-corp")
+instrument_litellm(vaol_client=vaol, tenant_id="acme-corp", subject="svc:gateway")
+
+response = litellm.completion(
+    model="openai/gpt-4o",
     messages=[{"role": "user", "content": "Hello!"}],
 )
 ```
