@@ -43,6 +43,10 @@ Default targets (adjust per tenant/regulatory profile):
    3. `--writer-fence-mode=required`
    4. production auth/policy flags
 2. Confirm startup integrity checks pass.
+3. Capture startup restore observability fields from logs:
+   1. `restore_path`
+   2. `restore_duration_ms`
+   3. `checkpoint_validated=true`
 
 ### Step 4: Verify ledger continuity
 
@@ -80,3 +84,11 @@ Do not resume writes if any of these fail:
 3. Anchor continuity mismatch when required
 4. Writer fence acquisition failure in required mode
 5. Strict bundle verification failure on untampered bundle
+
+## 7. Restore Performance Alerts
+
+Trigger operational alerts during DR and subsequent steady-state:
+
+1. Warning: startup restore duration exceeds 120 seconds.
+2. Critical: startup restore duration exceeds 300 seconds.
+3. Critical: `restore_path=record_traversal` occurs more than once in 24 hours.

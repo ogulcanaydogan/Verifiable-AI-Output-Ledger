@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/ogulcanaydogan/vaol/pkg/auth"
 	vaolcrypto "github.com/ogulcanaydogan/vaol/pkg/crypto"
@@ -20,14 +21,34 @@ func (s *Server) authenticateRequest(r *http.Request) (*auth.Claims, error) {
 	return s.authVerifier.VerifyAuthorization(r.Context(), r.Header.Get("Authorization"))
 }
 
-func (s *Server) rebuildMerkleTreeFromStore(ctx context.Context) error {
+func (s *Server) rebuildMerkleTreeFromStore(ctx context.Context) (retErr error) {
 	if s.store == nil {
 		return nil
 	}
 
+	startedAt := time.Now()
+	restorePath := "none"
+	checkpointValidated := false
+	treeSize := int64(0)
+	defer func() {
+		fields := []any{
+			"restore_path", restorePath,
+			"restore_duration_ms", time.Since(startedAt).Milliseconds(),
+			"tree_size", treeSize,
+			"checkpoint_validated", checkpointValidated,
+		}
+		if retErr != nil {
+			fields = append(fields, "error", retErr)
+			s.logger.Error("startup Merkle restore failed", fields...)
+			return
+		}
+		s.logger.Info("startup Merkle restore completed", fields...)
+	}()
+
 	rebuilt, err := s.rebuildMerkleTreeFromSnapshotAndTail(ctx)
 	usedFastPath := err == nil
 	if err == nil {
+		restorePath = "snapshot_tail"
 		s.logger.Info("rebuilt Merkle tree from persisted snapshot+tail state", "tree_size", rebuilt.Size())
 	} else {
 		switch {
@@ -39,6 +60,7 @@ func (s *Server) rebuildMerkleTreeFromStore(ctx context.Context) error {
 		rebuilt, err = s.rebuildMerkleTreeFromPersistentLeaves(ctx)
 		usedFastPath = err == nil
 		if err == nil {
+			restorePath = "persisted_leaves"
 			s.logger.Info("rebuilt Merkle tree from persisted leaf state", "tree_size", rebuilt.Size())
 		} else {
 			switch {
@@ -50,8 +72,10 @@ func (s *Server) rebuildMerkleTreeFromStore(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
+			restorePath = "record_traversal"
 		}
 	}
+	treeSize = rebuilt.Size()
 
 	if err := s.validateRebuiltMerkleTree(ctx, rebuilt); err != nil {
 		if !usedFastPath {
@@ -62,10 +86,13 @@ func (s *Server) rebuildMerkleTreeFromStore(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+		restorePath = "record_traversal"
+		treeSize = rebuilt.Size()
 		if err := s.validateRebuiltMerkleTree(ctx, rebuilt); err != nil {
 			return err
 		}
 	}
+	checkpointValidated = true
 
 	s.tree = rebuilt
 	return nil

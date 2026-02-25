@@ -1,4 +1,4 @@
-.PHONY: all build test lint clean run e2e tamper-test bench sdk-python sdk-typescript demo-auditor policy-test help
+.PHONY: all build test lint clean run e2e tamper-test bench bench-startup-restore sdk-python sdk-typescript demo-auditor policy-test help
 
 BINARY_DIR := bin
 GO := go
@@ -41,6 +41,9 @@ demo-auditor:
 
 bench:
 	$(GO) test -bench=. -benchmem ./pkg/merkle/... ./pkg/signer/... ./pkg/record/...
+
+bench-startup-restore:
+	./scripts/check_startup_restore_bench.sh
 
 policy-test:
 	opa test policies/ -v
@@ -107,6 +110,7 @@ help:
 	@echo "  make e2e            Run end-to-end tests (requires Docker)"
 	@echo "  make tamper-test    Run tamper detection test suite"
 	@echo "  make bench          Run benchmarks"
+	@echo "  make bench-startup-restore Run startup restore benchmark gate"
 	@echo "  make policy-test    Run OPA/Rego policy tests"
 	@echo "  make demo-auditor   Run reproducible auditor demo storyline"
 	@echo ""

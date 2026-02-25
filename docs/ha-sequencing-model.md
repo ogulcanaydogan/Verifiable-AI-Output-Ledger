@@ -93,3 +93,21 @@ For HA sign-off:
 3. Verify no chain break and no leaf index divergence.
 4. Verify checkpoint continuity across failover boundary.
 5. Verify auditor bundle before/after failover in strict mode.
+
+## 8. Startup Restore Benchmark Gate
+
+To keep snapshot restore behavior conservative and measurable:
+
+1. Run startup restore gate in CI and before release:
+
+```bash
+./scripts/check_startup_restore_bench.sh
+```
+
+2. Enforced ratio:
+   1. `snapshot_plus_tail <= 1.20 * persisted_leaves_only` (median `ns/op`).
+3. Persist gate output artifact:
+   1. `startup-restore-bench.txt`.
+4. Investigate before release when:
+   1. gate status is `fail`
+   2. startup restore path logs show repeated `record_traversal` fallback in production.

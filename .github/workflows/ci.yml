@@ -126,6 +126,21 @@ jobs:
           name: benchmark-results
           path: bench-results.txt
 
+  bench-startup-restore:
+    name: Bench (Startup Restore Gate)
+    runs-on: ubuntu-24.04
+    needs: [toolchain-guard]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: "1.24.13"
+      - run: ./scripts/check_startup_restore_bench.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: startup-restore-benchmark-results
+          path: startup-restore-bench.txt
+
   security:
     name: Security Scan
     runs-on: ubuntu-24.04
@@ -165,7 +180,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-24.04
-    needs: [test-go, test-e2e-tamper, security]
+    needs: [test-go, test-e2e-tamper, security, bench-startup-restore]
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff

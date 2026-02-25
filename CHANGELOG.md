@@ -39,6 +39,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Helm production controls** — Chart values/schema/template now include writer fencing and optional Merkle snapshot settings.
 - **Threat model and architecture docs** — Updated storage and startup integrity sections to reflect persisted Merkle leaf restoration, validation, and fallback behavior.
 
+## [0.2.28] - 2026-02-24
+
+### Added
+
+- **Startup restore benchmark gate** — Added `scripts/check_startup_restore_bench.sh` to run `BenchmarkServerStartupRestore` in deterministic mode, compute median `ns/op` for persisted-leaf and snapshot+tail paths, enforce a `1.20` ratio threshold, and emit `startup-restore-bench.txt`.
+- **Blocking CI benchmark job** — Added `Bench (Startup Restore Gate)` to CI with artifact upload (`startup-restore-benchmark-results`) and wired build dependency on this gate.
+- **Make target for release operators** — Added `make bench-startup-restore` to run the startup restore gate locally with the same logic as CI.
+- **Release notes** — Added `docs/releases/v0.2.28.md`.
+
+### Changed
+
+- **Startup restore observability** — Added deterministic structured startup logs with `restore_path`, `restore_duration_ms`, `tree_size`, and `checkpoint_validated` for all restore outcomes (including fail-closed exits).
+- **Operational threshold guidance** — Updated compliance, HA sequencing, and DR docs with explicit restore-performance guardrails:
+  - warning when restore duration exceeds 120s
+  - critical when restore duration exceeds 300s
+  - critical on repeated `record_traversal` fallback (>1 in 24h).
+- **Release metadata alignment** — Synchronized Python SDK, TypeScript SDK, Helm chart, and API reference version examples to `0.2.28`.
+
 ## [0.2.27] - 2026-02-23
 
 ### Added

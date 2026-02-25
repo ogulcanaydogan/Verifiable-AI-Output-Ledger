@@ -23,6 +23,11 @@ This document defines operational controls required for audit-ready operation.
 2. Verify latest checkpoint exists and tree size increased as expected.
 3. Review policy deny reason-code distribution for anomalies.
 4. Confirm no cross-tenant access denials are being auto-retried abnormally.
+5. Confirm startup restore logs include:
+   1. `restore_path`
+   2. `restore_duration_ms`
+   3. `checkpoint_validated`
+6. Confirm no unexpected `restore_path=record_traversal` on production restarts.
 
 ## 4. Weekly Controls
 
@@ -30,6 +35,9 @@ This document defines operational controls required for audit-ready operation.
 2. Review key revocation file freshness and signer inventory.
 3. Confirm encrypted payload retention jobs emitted tombstones.
 4. Confirm key-rotation metadata events executed (if rotation window hit).
+5. Verify CI startup restore benchmark gate result from `startup-restore-benchmark-results` artifact:
+   1. `ratio_snapshot_to_persisted <= 1.20`
+   2. status `pass`.
 
 ## 5. Monthly Controls
 
@@ -50,6 +58,9 @@ Trigger pages for:
 3. strict verification failure spike
 4. policy engine unavailable rate above threshold
 5. append latency SLO breach
+6. startup restore duration over 300s (`critical`)
+7. startup restore duration over 120s (`warning`)
+8. startup fallback to `record_traversal` more than once in 24h (`critical`)
 
 ## 7. Auditor Evidence Bundle (Operational)
 
@@ -60,4 +71,3 @@ For each reporting period, archive:
 3. signed checkpoint timeline
 4. strict verification transcripts
 5. retention/key-rotation logs and tombstones
-
