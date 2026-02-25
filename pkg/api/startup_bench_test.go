@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
 	"testing"
 	"time"
@@ -26,6 +27,7 @@ func BenchmarkServerStartupRestore(b *testing.B) {
 	for i := 0; i < totalRecords; i++ {
 		records = append(records, benchStartupStoredRecord(int64(i+1), i))
 	}
+	benchLogger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	b.Run("persisted_leaves_only", func(b *testing.B) {
 		st := newStartupSequenceStore(records, nil)
@@ -34,7 +36,7 @@ func BenchmarkServerStartupRestore(b *testing.B) {
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			srv := api.NewServer(cfg, st, sig, []signer.Verifier{ver}, merkle.New(), nil, slog.Default())
+			srv := api.NewServer(cfg, st, sig, []signer.Verifier{ver}, merkle.New(), nil, benchLogger)
 			if err := srv.StartupError(); err != nil {
 				b.Fatalf("startup error: %v", err)
 			}
@@ -51,7 +53,7 @@ func BenchmarkServerStartupRestore(b *testing.B) {
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			srv := api.NewServer(cfg, st, sig, []signer.Verifier{ver}, merkle.New(), nil, slog.Default())
+			srv := api.NewServer(cfg, st, sig, []signer.Verifier{ver}, merkle.New(), nil, benchLogger)
 			if err := srv.StartupError(); err != nil {
 				b.Fatalf("startup error: %v", err)
 			}
