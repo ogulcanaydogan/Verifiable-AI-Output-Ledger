@@ -9,11 +9,11 @@
 
 ## 2. Package Details
 
-1. Package directory: `tmp/audit-pack/20260306T092014Z`
-2. Package archive: `tmp/audit-pack/20260306T092014Z.tar.gz`
-3. Archive SHA256: `579552955f25a5d27d9d7c4469a92b28fc86f38141f75b30d34da08763091044`
-4. Manifest path: `tmp/audit-pack/20260306T092014Z/meta/manifest.txt`
-5. Checksums path: `tmp/audit-pack/20260306T092014Z/meta/SHA256SUMS`
+1. Package directory: `tmp/audit-pack/20260306T130202Z`
+2. Package archive: `tmp/audit-pack/20260306T130202Z.tar.gz`
+3. Archive SHA256: `e8bf3864a9ccac094b5876cae35c24ee9d194a49ef9b16401a51604e4211514e`
+4. Manifest path: `tmp/audit-pack/20260306T130202Z/meta/manifest.txt`
+5. Checksums path: `tmp/audit-pack/20260306T130202Z/meta/SHA256SUMS`
 
 ## 3. Included Matrix Evidence
 
@@ -34,6 +34,12 @@
 3. Latest green CI run (`main`): <https://github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger/actions/runs/22387631974>
 4. `v0.2.28` release workflow run: <https://github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger/actions/runs/22387436693>
 
-## 5. Handoff Statement
+## 5. Delivery Status
 
-This package is ready for external auditor intake and contains the required reproducibility and integrity evidence for the current pre-`v1.0.0` baseline.
+1. Handoff package generated and checksum-locked.
+2. Auditor intake package is ready for secure transfer.
+3. External acknowledgment reference: **pending auditor confirmation**.
+
+## 6. Handoff Statement
+
+This package is ready for external auditor intake and contains reproducibility and integrity evidence for the current pre-`v1.0.0` baseline.

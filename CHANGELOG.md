@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `docs/v1-compatibility-contract.md`
   - `docs/external-audit-readiness.md`
 - **External audit execution artifacts finalized** — Populated real auditor shortlist and deterministic selection record, locked audit SOW with dated milestones/SLAs, and added handoff checklist + dated handoff receipt under `docs/audit/`.
+- **Audit contract execution records** — Added signed contract attestation artifact `docs/audit/contract-signoff-2026-03-06.md` and linked sign-off references in shortlist/SOW docs.
+- **v1.0.0 gate checklist hardening** — Converted `docs/releases/v1.0.0-audit-gate.md` into explicit done/pending checklist for release-blocking criteria.
+- **Weekly audit cadence control** — Added weekly Issue #20 status cadence + log table in `docs/audit/control-matrix.md`.
+- **v1.0.0 release-note draft** — Added `docs/releases/v1.0.0.md` with audit summary placeholders and attestation section.
 
 ### Changed
 
