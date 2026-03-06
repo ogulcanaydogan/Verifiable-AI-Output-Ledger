@@ -63,6 +63,10 @@ Required fields per finding issue:
 
 ## 7. Open Findings Register
 
+Parallel outreach tracker: `docs/audit/multi-auditor-outreach-tracker.md`
+
+Redacted sharing policy: `docs/audit/redacted-package-spec.md`
+
 Track auditor findings and remediation status:
 
 | Finding ID | Severity | Affected Control | Status | Owner | Target Date | Retest Evidence |

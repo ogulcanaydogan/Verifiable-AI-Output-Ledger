@@ -34,13 +34,18 @@
 3. Latest green CI run (`main`): <https://github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger/actions/runs/22387631974>
 4. `v0.2.28` release workflow run: <https://github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger/actions/runs/22387436693>
 
-## 5. Delivery and Acknowledgment Tracking
+## 5. Multi-Auditor Delivery and Acknowledgment Tracking
 
-1. Handoff package generated and checksum-locked.
-2. Auditor intake package is ready for secure transfer.
-3. Transmission reference: **TOB-HANDOFF-20260306-001**.
-4. Acknowledgment status: **pending external auditor confirmation**.
-5. Acknowledgment evidence location: Issue #20 comment thread.
+| Firm | Transmission Ref | Package Tier | Ack Status | Ack Reference |
+|---|---|---|---|---|
+| Trail of Bits | `TOB-HANDOFF-20260306-001` | redacted-first | pending | pending external confirmation |
+| NCC Group | `NCC-HANDOFF-20260306-001` | redacted-first | pending | pending external confirmation |
+| Cure53 | `C53-HANDOFF-20260306-001` | redacted-first | pending | pending external confirmation |
+
+Tracking source of truth:
+
+1. `docs/audit/multi-auditor-outreach-tracker.md`
+2. Issue #20 comment thread
 
 ## 6. Handoff Statement
 
