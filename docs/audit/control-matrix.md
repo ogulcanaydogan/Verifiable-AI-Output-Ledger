@@ -43,15 +43,33 @@ This matrix maps key VAOL controls to evidence sources for external audit workfl
 | SC-2 | SBOM artifacts produced in CI | `ci.yml` (`sbom` job) |
 | SC-3 | Reproducible integration demo artifacts | `scripts/demo_auditor.sh`, uploaded artifacts |
 
-## 6. Open Findings Register
+## 6. Audit Findings Triage Policy
+
+Severity handling policy for Issue `#20` and child findings:
+
+1. `Critical`: must be fixed and retested before `v1.0.0` tag
+2. `High`: must be fixed and retested before release, **or** accepted with signed dated remediation plan
+3. `Medium`: backlog issue with owner and target date before `v1.1.0`
+4. `Low`: backlog issue with owner and target date, may be grouped
+
+Required fields per finding issue:
+
+1. finding ID
+2. severity
+3. affected controls
+4. owner
+5. due date
+6. evidence links (fix commit + test + retest)
+
+## 7. Open Findings Register
 
 Track auditor findings and remediation status:
 
 | Finding ID | Severity | Affected Control | Status | Owner | Target Date | Retest Evidence |
 |---|---|---|---|---|---|---|
-| `<id>` | `<sev>` | `<control>` | open | `<owner>` | `<YYYY-MM-DD>` | `<link/path>` |
+| _none yet_ |  |  |  |  |  |  |
 
-## 7. Evidence Collection Commands
+## 8. Evidence Collection Commands
 
 Run and archive these commands for each audit cycle:
 

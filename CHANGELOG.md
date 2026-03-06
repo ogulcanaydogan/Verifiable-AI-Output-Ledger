@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `docs/compliance-operations.md`
   - `docs/v1-compatibility-contract.md`
   - `docs/external-audit-readiness.md`
+- **External audit execution artifacts finalized** — Populated real auditor shortlist and deterministic selection record, locked audit SOW with dated milestones/SLAs, and added handoff checklist + dated handoff receipt under `docs/audit/`.
 
 ### Changed
 
@@ -38,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `--merkle-snapshot-interval`
 - **Helm production controls** — Chart values/schema/template now include writer fencing and optional Merkle snapshot settings.
 - **Threat model and architecture docs** — Updated storage and startup integrity sections to reflect persisted Merkle leaf restoration, validation, and fallback behavior.
+- **Demo/audit pack resilience on shared workstations** — `scripts/demo_auditor.sh` and Docker Compose now support non-default PostgreSQL/OPA host ports for audit matrix runs when `5432/8181` are already occupied.
+- **Evidence pack contents** — `scripts/build_audit_pack.sh` now includes audit handoff checklist and dated handoff receipt in packaged docs.
 
 ## [0.2.28] - 2026-02-24
 

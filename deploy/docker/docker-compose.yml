@@ -44,7 +44,7 @@ services:
       POSTGRES_USER: vaol
       POSTGRES_PASSWORD: vaol
     ports:
-      - "5432:5432"
+      - "${VAOL_PG_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -56,7 +56,7 @@ services:
   opa:
     image: openpolicyagent/opa:0.70.0-static
     ports:
-      - "8181:8181"
+      - "${VAOL_OPA_PORT:-8181}:8181"
     volumes:
       - ../../policies:/policies
     command:

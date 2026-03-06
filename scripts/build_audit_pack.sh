@@ -59,10 +59,13 @@ copy_if_exists "${ROOT_DIR}/docs/ha-sequencing-model.md" "${DOCS_DIR}/ha-sequenc
 copy_if_exists "${ROOT_DIR}/docs/dr-playbook.md" "${DOCS_DIR}/dr-playbook.md"
 copy_if_exists "${ROOT_DIR}/docs/compliance-operations.md" "${DOCS_DIR}/compliance-operations.md"
 copy_if_exists "${ROOT_DIR}/docs/auditor-guide.md" "${DOCS_DIR}/auditor-guide.md"
+copy_if_exists "${ROOT_DIR}/docs/releases/v1.0.0-audit-gate.md" "${DOCS_DIR}/v1.0.0-audit-gate.md"
 copy_if_exists "${ROOT_DIR}/docs/audit/rfp-shortlist.md" "${DOCS_DIR}/audit-rfp-shortlist.md"
 copy_if_exists "${ROOT_DIR}/docs/audit/sow.md" "${DOCS_DIR}/audit-sow.md"
 copy_if_exists "${ROOT_DIR}/docs/audit/control-matrix.md" "${DOCS_DIR}/audit-control-matrix.md"
 copy_if_exists "${ROOT_DIR}/docs/audit/remediation-report-template.md" "${DOCS_DIR}/audit-remediation-template.md"
+copy_if_exists "${ROOT_DIR}/docs/audit/handoff-checklist.md" "${DOCS_DIR}/audit-handoff-checklist.md"
+copy_if_exists "${ROOT_DIR}/docs/audit/handoff-receipt-2026-03-06.md" "${DOCS_DIR}/audit-handoff-receipt-2026-03-06.md"
 
 if [[ "${RUN_MATRIX}" == "1" ]]; then
   require_cmd go

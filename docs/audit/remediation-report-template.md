@@ -18,6 +18,11 @@ Use this template to publish sanitized remediation status after external audit c
 | Medium | 0 | 0 | 0 |
 | Low | 0 | 0 | 0 |
 
+Release gate policy:
+
+1. `Critical` must be `0` open before `v1.0.0`.
+2. `High` must be remediated or have an accepted dated remediation plan.
+
 ## 3. Resolved Findings
 
 For each resolved finding:
@@ -27,7 +32,8 @@ For each resolved finding:
 3. Summary: `<short description>`
 4. Fix commit(s): `<hashes>`
 5. Linked issue(s): `<#issue>`
-6. Retest evidence: `<artifact link/path>`
+6. Test evidence: `<test log / CI link>`
+7. Retest evidence: `<artifact link/path>`
 
 ## 4. Planned Remediation (Open Findings)
 
@@ -46,11 +52,12 @@ For accepted but not-yet-resolved findings:
 
 Include links to:
 
-1. CI run showing required matrix passing.
-2. Auditor demo transcript and tamper-fail evidence.
-3. Bundle verification transcript (`strict` profile).
-4. SBOM/provenance artifacts.
-5. Startup restore benchmark gate output (`startup-restore-bench.txt`).
+1. CI run showing required matrix passing
+2. Auditor demo transcript and tamper-fail evidence
+3. Bundle verification transcript (`strict` profile)
+4. SBOM/provenance artifacts
+5. Startup restore benchmark gate output (`startup-restore-bench.txt`)
+6. Auditor retest report reference
 
 ## 6. Integrity Statement
 
