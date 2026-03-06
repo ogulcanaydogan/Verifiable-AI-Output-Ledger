@@ -62,3 +62,10 @@ Tie-break order:
 3. Decision owner: **Ogulcan Aydogan**
 4. Tie-break rationale: Highest crypto + ledger weighted score while meeting delivery gate
 5. Approved budget: **USD 85,000**
+
+## 7. Contract Execution Record
+
+1. Procurement decision recorded: **2026-03-06**
+2. Contract status: **signed** (commercial terms retained outside public repo)
+3. Signed SOW reference: `docs/audit/sow.md`
+4. Internal sign-off artifact: `docs/audit/contract-signoff-2026-03-06.md`

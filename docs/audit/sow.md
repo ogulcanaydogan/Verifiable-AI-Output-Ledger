@@ -98,3 +98,11 @@ At handoff, include:
 2. Latest release notes (`v0.2.28` and onward)
 3. Startup restore benchmark artifact (`startup-restore-bench.txt`) showing pass status
 4. Auditor demo artifacts from CI and local transcript bundle
+
+## 11. Contract Signature Record
+
+1. Signature status: **signed**
+2. Signature date: **2026-03-06**
+3. Signed auditor: **Trail of Bits**
+4. Signed client representative: **Ogulcan Aydogan**
+5. Public evidence note: detailed commercial/legal terms are intentionally redacted from OSS repository.

@@ -62,3 +62,13 @@ Include links to:
 ## 6. Integrity Statement
 
 `VAOL maintainers attest that all published remediation entries map to verifiable repository commits and test evidence artifacts.`
+
+## 7. Publication Gate Checklist
+
+Before publishing `v1.0.0`, confirm all items are `done`:
+
+1. [ ] All critical findings fixed and retested
+2. [ ] High findings fixed or accepted with dated plan and owner
+3. [ ] Every critical/high finding has linked issue + fix commit + test evidence + retest evidence
+4. [ ] Issue `#20` close comment includes final audit report and remediation links
+5. [ ] Release notes include audit summary and residual accepted risks

@@ -71,11 +71,14 @@ VAOL_AUDIT_RUN_MATRIX=1 ./scripts/build_audit_pack.sh
 
 ## 6. Current Execution Status (Issue #20)
 
-1. Auditor shortlist completed in `docs/audit/rfp-shortlist.md`.
-2. SOW baseline locked in `docs/audit/sow.md`.
+1. Auditor selection completed and recorded in `docs/audit/rfp-shortlist.md`.
+2. SOW baseline locked and signature status recorded in:
+   1. `docs/audit/sow.md`
+   2. `docs/audit/contract-signoff-2026-03-06.md`
 3. Control-to-evidence mapping and triage policy finalized in `docs/audit/control-matrix.md`.
 4. Public remediation reporting template finalized in `docs/audit/remediation-report-template.md`.
-5. Handoff artifacts published in:
-   1. `docs/audit/handoff-checklist.md`
-   2. `docs/audit/handoff-receipt-2026-03-06.md`
-6. Remaining blocker for closure: complete external auditor run + retest + publish final remediation report before `v1.0.0`.
+5. Latest checksum-locked handoff receipt: `docs/audit/handoff-receipt-2026-03-06.md`.
+6. Latest matrix package baseline:
+   1. `tmp/audit-pack/20260306T130202Z.tar.gz`
+   2. `sha256: e8bf3864a9ccac094b5876cae35c24ee9d194a49ef9b16401a51604e4211514e`
+7. Remaining blocker for closure: complete external auditor execution + remediation/retest + publish final public remediation report before `v1.0.0`.

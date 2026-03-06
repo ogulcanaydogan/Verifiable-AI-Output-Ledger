@@ -90,3 +90,21 @@ VAOL_AUDIT_RUN_MATRIX=1 ./scripts/build_audit_pack.sh
 ```bash
 ./scripts/demo_auditor.sh
 ```
+
+## 9. Weekly Audit Execution Cadence
+
+Issue `#20` must receive a weekly status comment while external audit is active.
+
+Required weekly update fields:
+
+1. report week ending date
+2. current finding counts by severity
+3. critical/high remediation progress
+4. retest requests sent/received
+5. risk to `v1.0.0` target date
+
+Weekly status log:
+
+| Week Ending | Status Owner | Summary | Link |
+|---|---|---|---|
+| 2026-03-06 | Ogulcan Aydogan | Contract + evidence handoff baseline completed; awaiting auditor execution window | `#20` |
