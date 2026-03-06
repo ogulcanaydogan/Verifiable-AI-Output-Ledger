@@ -108,3 +108,13 @@ Weekly status log:
 | Week Ending | Status Owner | Summary | Link |
 |---|---|---|---|
 | 2026-03-06 | Ogulcan Aydogan | Contract + evidence handoff baseline completed; awaiting auditor execution window | `#20` |
+
+
+## 10. Daily Critical/High Cadence
+
+During active remediation windows:
+
+1. Every open `critical` finding must receive a daily progress comment in its issue.
+2. Every open `high` finding must receive a daily progress comment in its issue.
+3. Daily comment must include: blocker status, ETA confidence, and retest request status.
+4. Any missed daily update is treated as release risk and escalated in Issue `#20`.

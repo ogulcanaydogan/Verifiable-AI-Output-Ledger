@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **v1.0.0 gate checklist hardening** — Converted `docs/releases/v1.0.0-audit-gate.md` into explicit done/pending checklist for release-blocking criteria.
 - **Weekly audit cadence control** — Added weekly Issue #20 status cadence + log table in `docs/audit/control-matrix.md`.
 - **v1.0.0 release-note draft** — Added `docs/releases/v1.0.0.md` with audit summary placeholders and attestation section.
+- **Audit finding intake standardization** — Added `docs/audit/finding-intake-playbook.md`, `scripts/create_audit_finding_issue.sh`, and `.github/ISSUE_TEMPLATE/audit_finding.md` for deterministic finding tracking.
 
 ### Changed
 
