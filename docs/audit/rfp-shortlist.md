@@ -69,3 +69,25 @@ Tie-break order:
 2. Contract status: **signed** (commercial terms retained outside public repo)
 3. Signed SOW reference: `docs/audit/sow.md`
 4. Internal sign-off artifact: `docs/audit/contract-signoff-2026-03-06.md`
+
+## 8. Parallel Outreach Mode (v1.0.0 Acceleration)
+
+Strategy lock:
+
+1. **3 firms parallel**
+2. **Redacted package first**
+3. **SLA: 72h acknowledgment / 5 business days SOW activation**
+
+Outreach tracking baseline:
+
+| Firm | Track | Transfer Ref | Sent At (UTC) | Ack Due (UTC) | SOW Due (UTC) | Status |
+|---|---|---|---|---|---|---|
+| Trail of Bits | primary | `TOB-HANDOFF-20260306-001` | 2026-03-06T13:30:00Z | 2026-03-09T13:30:00Z | 2026-03-13T23:59:59Z | awaiting_ack |
+| NCC Group | backup-a | `NCC-HANDOFF-20260306-001` | 2026-03-06T13:30:00Z | 2026-03-09T13:30:00Z | 2026-03-13T23:59:59Z | awaiting_ack |
+| Cure53 | backup-b | `C53-HANDOFF-20260306-001` | 2026-03-06T13:30:00Z | 2026-03-09T13:30:00Z | 2026-03-13T23:59:59Z | awaiting_ack |
+
+Fallback rule:
+
+1. If `ack` is missing after 72h, mark `no-response` and escalate same day on Issue `#20`.
+2. If `SOW` is not active after 5 business days, mark firm `standby` and keep next-ranked active path.
+3. `v1.0.0` requires at least one auditor with `ack + active SOW`.
