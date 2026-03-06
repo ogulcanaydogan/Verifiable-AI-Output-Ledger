@@ -34,11 +34,13 @@
 3. Latest green CI run (`main`): <https://github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger/actions/runs/22387631974>
 4. `v0.2.28` release workflow run: <https://github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger/actions/runs/22387436693>
 
-## 5. Delivery Status
+## 5. Delivery and Acknowledgment Tracking
 
 1. Handoff package generated and checksum-locked.
 2. Auditor intake package is ready for secure transfer.
-3. External acknowledgment reference: **pending auditor confirmation**.
+3. Transmission reference: **TOB-HANDOFF-20260306-001**.
+4. Acknowledgment status: **pending external auditor confirmation**.
+5. Acknowledgment evidence location: Issue #20 comment thread.
 
 ## 6. Handoff Statement
 
