@@ -68,3 +68,14 @@ To include a full local verification matrix in the package:
 ```bash
 VAOL_AUDIT_RUN_MATRIX=1 ./scripts/build_audit_pack.sh
 ```
+
+## 6. Current Execution Status (Issue #20)
+
+1. Auditor shortlist completed in `docs/audit/rfp-shortlist.md`.
+2. SOW baseline locked in `docs/audit/sow.md`.
+3. Control-to-evidence mapping and triage policy finalized in `docs/audit/control-matrix.md`.
+4. Public remediation reporting template finalized in `docs/audit/remediation-report-template.md`.
+5. Handoff artifacts published in:
+   1. `docs/audit/handoff-checklist.md`
+   2. `docs/audit/handoff-receipt-2026-03-06.md`
+6. Remaining blocker for closure: complete external auditor run + retest + publish final remediation report before `v1.0.0`.

@@ -15,12 +15,19 @@ DEFAULT_SERVER_ADDR="127.0.0.1:18080"
 REQUESTED_SERVER_ADDR="${VAOL_DEMO_ADDR:-}"
 SERVER_ADDR="${REQUESTED_SERVER_ADDR:-${DEFAULT_SERVER_ADDR}}"
 SERVER_URL="http://${SERVER_ADDR}"
+DEFAULT_DEMO_POSTGRES_PORT=5432
+REQUESTED_DEMO_POSTGRES_PORT="${VAOL_DEMO_PG_PORT:-}"
+DEMO_POSTGRES_PORT="${REQUESTED_DEMO_POSTGRES_PORT:-${DEFAULT_DEMO_POSTGRES_PORT}}"
+DEFAULT_DEMO_OPA_PORT=8181
+REQUESTED_DEMO_OPA_PORT="${VAOL_DEMO_OPA_PORT:-}"
+DEMO_OPA_PORT="${REQUESTED_DEMO_OPA_PORT:-${DEFAULT_DEMO_OPA_PORT}}"
 TENANT_ID="${VAOL_DEMO_TENANT:-acme-health-${RUN_ID}}"
 OPA_POLICY="${VAOL_DEMO_OPA_POLICY:-v1/data/vaol/mandatory_citations}"
 KEEP_STACK="${VAOL_DEMO_KEEP_STACK:-0}"
 RESET_STATE="${VAOL_DEMO_RESET_STATE:-1}"
 SKIP_BUILD="${VAOL_DEMO_SKIP_BUILD:-0}"
-DSN="${VAOL_DEMO_DSN:-postgres://vaol:vaol@localhost:5432/vaol?sslmode=disable}"
+DSN="${VAOL_DEMO_DSN:-}"
+COMPOSE_ARGS=()
 
 mkdir -p "${KEY_DIR}" "${LOG_DIR}" "${ARTIFACT_DIR}"
 
@@ -44,10 +51,61 @@ is_listen_addr_in_use() {
   local host="$1"
   local port="$2"
   if command -v lsof >/dev/null 2>&1; then
-    lsof -nP -iTCP@"${host}:${port}" -sTCP:LISTEN >/dev/null 2>&1
+    # Check by port to avoid false negatives when listeners bind to 0.0.0.0/::.
+    lsof -nP -iTCP:"${port}" -sTCP:LISTEN >/dev/null 2>&1
     return $?
   fi
   return 1
+}
+
+select_listen_port() {
+  local default_port="$1"
+  local requested_port="${2:-}"
+  local label="$3"
+
+  local port="${requested_port:-${default_port}}"
+  if [[ ! "${port}" =~ ^[0-9]+$ ]]; then
+    echo "invalid ${label} port: ${port}" >&2
+    exit 1
+  fi
+
+  if ! is_listen_addr_in_use "127.0.0.1" "${port}"; then
+    echo "${port}"
+    return
+  fi
+
+  if [[ -n "${requested_port}" ]]; then
+    echo "configured ${label} port ${port} is already in use; choose a different value" >&2
+    exit 1
+  fi
+
+  for offset in $(seq 1 50); do
+    local candidate=$((default_port + offset))
+    if ((candidate > 65535)); then
+      break
+    fi
+    if ! is_listen_addr_in_use "127.0.0.1" "${candidate}"; then
+      echo "[demo] default ${label} port ${default_port} is busy; using ${candidate}" >&2
+      echo "${candidate}"
+      return
+    fi
+  done
+
+  echo "no free ${label} port found near ${default_port}" >&2
+  exit 1
+}
+
+configure_compose_ports() {
+  DEMO_POSTGRES_PORT="$(select_listen_port "${DEFAULT_DEMO_POSTGRES_PORT}" "${REQUESTED_DEMO_POSTGRES_PORT}" "postgres")"
+  DEMO_OPA_PORT="$(select_listen_port "${DEFAULT_DEMO_OPA_PORT}" "${REQUESTED_DEMO_OPA_PORT}" "opa")"
+
+  export VAOL_PG_PORT="${DEMO_POSTGRES_PORT}"
+  export VAOL_OPA_PORT="${DEMO_OPA_PORT}"
+  COMPOSE_ARGS=(-f "${COMPOSE_FILE}")
+
+  if [[ -z "${DSN}" ]]; then
+    DSN="postgres://vaol:vaol@localhost:${DEMO_POSTGRES_PORT}/vaol?sslmode=disable"
+  fi
 }
 
 select_server_addr() {
@@ -102,7 +160,7 @@ cleanup() {
   fi
 
   if [[ "${KEEP_STACK}" != "1" ]]; then
-    docker compose -f "${COMPOSE_FILE}" down >/dev/null 2>&1 || true
+    docker compose "${COMPOSE_ARGS[@]}" down >/dev/null 2>&1 || true
   fi
 }
 trap cleanup EXIT
@@ -115,6 +173,7 @@ if [[ "${SKIP_BUILD}" != "1" ]]; then
 fi
 ensure_docker_ready
 select_server_addr
+configure_compose_ports
 
 if [[ "${SKIP_BUILD}" == "1" ]]; then
   if [[ ! -x "${BIN_DIR}/vaol-server" ]] || [[ ! -x "${BIN_DIR}/vaol" ]]; then
@@ -131,13 +190,13 @@ echo "[demo] generating signing key pair..."
 
 echo "[demo] starting postgres + opa dependencies..."
 if [[ "${RESET_STATE}" == "1" ]]; then
-  docker compose -f "${COMPOSE_FILE}" down -v >/dev/null 2>&1 || true
+  docker compose "${COMPOSE_ARGS[@]}" down -v >/dev/null 2>&1 || true
 fi
-docker compose -f "${COMPOSE_FILE}" up -d postgres opa >/dev/null
+docker compose "${COMPOSE_ARGS[@]}" up -d postgres opa >/dev/null
 
 echo "[demo] waiting for postgres..."
 for _ in $(seq 1 30); do
-  if docker compose -f "${COMPOSE_FILE}" exec -T postgres pg_isready -U vaol >/dev/null 2>&1; then
+  if docker compose "${COMPOSE_ARGS[@]}" exec -T postgres pg_isready -U vaol >/dev/null 2>&1; then
     break
   fi
   sleep 1
@@ -148,7 +207,7 @@ echo "[demo] starting vaol-server locally..."
   --addr "${SERVER_ADDR}" \
   --dsn "${DSN}" \
   --key "${KEY_DIR}/vaol-signing.pem" \
-  --opa-url "http://localhost:8181" \
+  --opa-url "http://localhost:${DEMO_OPA_PORT}" \
   --opa-policy "${OPA_POLICY}" \
   --policy-mode fail-closed \
   --auth-mode disabled \

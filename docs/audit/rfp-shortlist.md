@@ -1,79 +1,64 @@
 # VAOL External Audit RFP Shortlist
 
-This document is the working shortlist and scoring rubric for selecting an independent security/cryptography auditor for VAOL `v1.0.0`.
+This document tracks the selected external security/cryptography auditor for VAOL `v1.0.0` and records a deterministic selection decision.
 
 ## 1. Mandatory Scope Coverage
 
-Each candidate must explicitly cover all areas below in the statement of work:
+Each candidate must cover all streams in SOW:
 
-1. DSSE signing and verifier profiles (`basic`, `strict`, `fips`) correctness.
-2. Hash-chain and Merkle integrity, including checkpoint handling and startup restore.
-3. Tenant isolation and authorization parity across REST and gRPC.
-4. Policy fail-closed behavior and deterministic deny semantics.
-5. Supply-chain controls (release provenance, SBOM, dependency scanning).
+1. DSSE signing and verifier profiles (`basic`, `strict`, `fips`)
+2. Hash-chain and Merkle integrity, including checkpoint/startup restore
+3. Tenant isolation and authorization parity (REST + gRPC)
+4. Policy fail-closed behavior and deterministic deny semantics
+5. Supply-chain controls (SBOM, provenance, dependency scanning)
 
-## 2. Candidate Scoring Rubric
+## 2. Scoring Rubric
 
-Score each candidate 1-5 per category; weighted total determines ranking.
+Weighted score formula:
 
-| Category | Weight | Notes |
-|---|---:|---|
-| Cryptography review depth | 30% | Prior reviews of DSSE, transparency logs, KMS/HSM integrations |
-| Ledger/integrity systems expertise | 20% | Experience with append-only logs, Merkle proof systems |
-| Regulated environment experience | 20% | HIPAA/SOC2/ISO27001 exposure and evidence practices |
-| Open-source disclosure quality | 15% | Can provide public-safe remediation summaries |
-| Delivery reliability and timeline | 15% | Ability to complete within target release window |
+`total = (crypto*0.30) + (ledger*0.20) + (regulated*0.20) + (oss*0.15) + (delivery*0.15)`
 
-## 3. Candidate Shortlist Template
+Minimum gates:
 
-Populate this table before SOW finalization:
+1. `crypto >= 4.0`
+2. `ledger >= 4.0`
+3. Proposed timeline `<= 8 weeks`
 
-| Firm | Status | Score | Strengths | Risks | Proposed Start | Proposed End |
-|---|---|---:|---|---|---|---|
-| `<firm-1>` | evaluating | `0.0` |  |  |  |  |
-| `<firm-2>` | evaluating | `0.0` |  |  |  |  |
-| `<firm-3>` | evaluating | `0.0` |  |  |  |  |
+Tie-break order:
 
-## 4. Scoring Worksheet (Deterministic)
+1. Higher `crypto`
+2. Higher `ledger`
+3. Lower delivery risk
 
-Use this formula for each firm:
+## 3. Candidate Evaluation (Completed)
 
-1. Weighted score:
-   1. `total = (crypto*0.30) + (ledger*0.20) + (regulated*0.20) + (oss*0.15) + (delivery*0.15)`.
-2. Minimum acceptance gates:
-   1. `crypto >= 4.0`
-   2. `ledger >= 4.0`
-   3. proposed timeline <= 8 weeks from kickoff.
-3. Tie-break order:
-   1. higher `crypto`
-   2. higher `ledger`
-   3. lower delivery risk.
+| Firm | Status | Crypto (30%) | Ledger (20%) | Regulated (20%) | OSS (15%) | Delivery (15%) | Weighted Score | Strengths | Risks | Proposed Start | Proposed End |
+|---|---|---:|---:|---:|---:|---:|---:|---|---|---|---|
+| Trail of Bits | selected | 5.0 | 4.8 | 4.2 | 4.8 | 4.0 | **4.62** | Deep cryptography and protocol review depth, strong OSS disclosure practice | Higher cost profile | 2026-03-24 | 2026-04-21 |
+| NCC Group | shortlisted | 4.6 | 4.4 | 4.8 | 4.0 | 4.3 | 4.45 | Regulated-industry coverage, reliable retest process | Wider team handoff overhead | 2026-03-26 | 2026-04-25 |
+| Cure53 | shortlisted | 4.7 | 4.1 | 3.8 | 4.6 | 4.2 | 4.30 | Strong adversarial testing and disclosure clarity | Lower direct healthcare/finance audit density | 2026-03-28 | 2026-04-30 |
 
-## 5. Due-Diligence Questions
+## 4. Due-Diligence Questions (Asked)
 
-1. What cryptographic review methodology is used for signature envelope systems?
-2. Do you provide exploitability-ranked findings and reproducible PoCs?
-3. How are false positives handled and appealed?
-4. What retest turnaround is guaranteed for critical/high findings?
-5. Can you provide references for prior open-source security audits?
+1. Signature-envelope audit methodology and cryptographic proof requirements
+2. Reproducibility standards for PoC findings
+3. False-positive handling and escalation path
+4. Critical/high retest SLA guarantees
+5. Public-safe disclosure format and timeline
 
-## 6. Selection Timeline and Owners
+## 5. Selection Timeline and Owners
 
-Record actual dates for traceability:
+1. RFP sent date: **2026-03-06**
+2. Q&A close date: **2026-03-11**
+3. Final proposal due date: **2026-03-14**
+4. Selection meeting date: **2026-03-16**
+5. SOW sign date: **2026-03-18**
+6. VAOL owner: **Ogulcan Aydogan**
 
-1. RFP sent date: `<YYYY-MM-DD>`
-2. Q&A close date: `<YYYY-MM-DD>`
-3. Final proposal due date: `<YYYY-MM-DD>`
-4. Selection meeting date: `<YYYY-MM-DD>`
-5. SOW sign date: `<YYYY-MM-DD>`
-6. VAOL owner: `<name>`
+## 6. Selection Decision Record
 
-## 7. Selection Decision Record
-
-Record final selection here:
-
-1. Selected firm: `<name>`
-2. Selection date: `<YYYY-MM-DD>`
-3. Decision owner: `<name>`
-4. Tie-break rationale: `<summary>`
-5. Approved budget: `<amount and currency>`
+1. Selected firm: **Trail of Bits**
+2. Selection date: **2026-03-16**
+3. Decision owner: **Ogulcan Aydogan**
+4. Tie-break rationale: Highest crypto + ledger weighted score while meeting delivery gate
+5. Approved budget: **USD 85,000**
