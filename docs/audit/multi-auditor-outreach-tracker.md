@@ -23,9 +23,9 @@ Use the following reference format per firm:
 
 | Firm | Transfer Ref | Package Tier | Sent At (UTC) | Ack Due (UTC) | SOW Due (UTC) | Ack Ref | SOW Ref | Status | Next Action |
 |---|---|---|---|---|---|---|---|---|---|
-| Trail of Bits | `TOB-HANDOFF-20260306-001` | redacted | 2026-03-06T13:30:00Z | 2026-03-09T13:30:00Z | 2026-03-13T23:59:59Z | pending | active contract (`docs/audit/sow.md`) | awaiting_ack | wait for acknowledgment |
-| NCC Group | `NCC-HANDOFF-20260306-001` | redacted | 2026-03-06T13:30:00Z | 2026-03-09T13:30:00Z | 2026-03-13T23:59:59Z | pending | pending | awaiting_ack | wait for acknowledgment |
-| Cure53 | `C53-HANDOFF-20260306-001` | redacted | 2026-03-06T13:30:00Z | 2026-03-09T13:30:00Z | 2026-03-13T23:59:59Z | pending | pending | awaiting_ack | wait for acknowledgment |
+| Trail of Bits | `TOB-HANDOFF-20260306-001` | redacted | 2026-03-06T13:30:00Z | 2026-03-09T13:30:00Z | 2026-03-13T23:59:59Z | pending | active contract (`docs/audit/sow.md`) | follow_up_sent | re-check response by 2026-03-12 |
+| NCC Group | `NCC-HANDOFF-20260306-001` | redacted | 2026-03-06T13:30:00Z | 2026-03-09T13:30:00Z | 2026-03-13T23:59:59Z | pending | pending | follow_up_sent | re-check response by 2026-03-12 |
+| Cure53 | `C53-HANDOFF-20260306-001` | redacted | 2026-03-06T13:30:00Z | 2026-03-09T13:30:00Z | 2026-03-13T23:59:59Z | pending | pending | follow_up_sent | re-check response by 2026-03-12 |
 
 ## 4. Escalation Matrix
 
@@ -40,7 +40,13 @@ Use the following reference format per firm:
    2. continue `v0.2.x` only
    3. block `v1.0.0`
 
-## 5. Completion Criteria
+## 5. Latest Operational Checkpoint
+
+1. `2026-03-10`: follow-up sent on all three outreach paths after the expired 72h acknowledgment window.
+2. Current waiting state: `ack` still pending for all firms.
+3. Next manual checkpoint: `2026-03-12`.
+
+## 6. Completion Criteria
 
 1. At least one firm has `ack_ref` populated.
 2. At least one firm has active SOW.
