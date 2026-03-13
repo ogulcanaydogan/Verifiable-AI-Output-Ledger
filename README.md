@@ -5,6 +5,8 @@
 Provides tamper-evident audit trails for regulated industries where organizations must prove the provenance, policy compliance, and integrity of every AI-generated output. DSSE envelopes, RFC 6962 Merkle trees, OPA policy-as-code, and multi-tenant JWT authentication.
 
 [![CI](https://github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger/actions/workflows/ci.yml/badge.svg)](https://github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger/badge)](https://scorecard.dev/viewer/?uri=github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/0000/badge)](https://www.bestpractices.dev/projects/0000)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger)](https://goreportcard.com/report/github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8.svg)](go.mod)
@@ -28,7 +30,7 @@ VAOL solves this by providing a **cryptographic audit ledger** that:
 - Creates **tamper-evident records** of every AI inference with digital signatures and hash chains
 - Enforces **policy-as-code** via OPA/Rego evaluated at decision time
 - Provides **verifiable proofs** using RFC 6962 Merkle trees that auditors can independently validate
-- Supports **privacy-preserving modes** — store hashes only, encrypted content, or plaintext based on policy
+- Supports **privacy-preserving modes** — store hashes only, encrypted content, or plaintext based on policy 
 - Enables **zero-trust verification** — clients can verify signatures and proofs without trusting the server
 
 The project targets compliance teams, auditors, and engineers building AI systems that require demonstrable governance for regulatory, legal, or enterprise requirements.
