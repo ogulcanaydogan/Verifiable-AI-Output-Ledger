@@ -50,3 +50,13 @@ Tracking source of truth:
 ## 6. Handoff Statement
 
 This package is ready for external auditor intake and contains reproducibility and integrity evidence for the current pre-`v1.0.0` baseline.
+
+## 7. Follow-Up Checkpoint
+
+1. `2026-03-10`: follow-up sent to Trail of Bits, NCC Group, and Cure53.
+2. Follow-up references remained unchanged:
+   1. `TOB-HANDOFF-20260306-001`
+   2. `NCC-HANDOFF-20260306-001`
+   3. `C53-HANDOFF-20260306-001`
+3. Acknowledgment status at this checkpoint: pending for all three firms.
+4. Next checkpoint: `2026-03-12` or earlier if any firm responds.
