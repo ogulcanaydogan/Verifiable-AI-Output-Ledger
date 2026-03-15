@@ -32,6 +32,195 @@
         "merkle-tree",
         "security"
       ]
+    },
+    {
+      "guid": "llm-supply-chain-attestation",
+      "name": "LLM Supply Chain Attestation",
+      "description": "Supply chain security for LLM artifacts using Sigstore, in-toto, and SLSA frameworks. Generates signed attestations for model weights, training data, and inference outputs.",
+      "webpageUrl": {
+        "url": "https://github.com/ogulcanaydogan/LLM-Supply-Chain-Attestation"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/ogulcanaydogan/LLM-Supply-Chain-Attestation"
+      },
+      "licenses": [
+        "spdx:Apache-2.0"
+      ],
+      "tags": [
+        "go",
+        "supply-chain",
+        "sigstore",
+        "slsa",
+        "security"
+      ]
+    },
+    {
+      "guid": "prompt-injection-firewall",
+      "name": "Prompt Injection Firewall",
+      "description": "Runtime firewall that detects and blocks prompt injection attacks against LLM applications. Covers OWASP LLM Top 10 attack vectors with configurable detection rules.",
+      "webpageUrl": {
+        "url": "https://github.com/ogulcanaydogan/Prompt-Injection-Firewall"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/ogulcanaydogan/Prompt-Injection-Firewall"
+      },
+      "licenses": [
+        "spdx:Apache-2.0"
+      ],
+      "tags": [
+        "go",
+        "security",
+        "prompt-injection",
+        "firewall",
+        "owasp"
+      ]
+    },
+    {
+      "guid": "sovereign-rag-gateway",
+      "name": "Sovereign RAG Gateway",
+      "description": "Policy-first retrieval-augmented generation gateway with PHI/PII redaction, access control, and audit logging. Self-hostable with no mandatory cloud dependencies.",
+      "webpageUrl": {
+        "url": "https://github.com/ogulcanaydogan/Sovereign-RAG-Gateway"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/ogulcanaydogan/Sovereign-RAG-Gateway"
+      },
+      "licenses": [
+        "spdx:MIT"
+      ],
+      "tags": [
+        "python",
+        "rag",
+        "privacy",
+        "governance",
+        "redaction"
+      ]
+    },
+    {
+      "guid": "ai-provenance-tracker",
+      "name": "AI Provenance Tracker",
+      "description": "Multi-modal AI content detection and C2PA provenance verification across text, images, audio, and video. Explainable confidence scoring with signal-by-signal breakdown.",
+      "webpageUrl": {
+        "url": "https://github.com/ogulcanaydogan/AI-Provenance-Tracker"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/ogulcanaydogan/AI-Provenance-Tracker"
+      },
+      "licenses": [
+        "spdx:MIT"
+      ],
+      "tags": [
+        "python",
+        "ai-detection",
+        "c2pa",
+        "provenance",
+        "deepfake"
+      ]
+    },
+    {
+      "guid": "llm-slo-ebpf-toolkit",
+      "name": "LLM SLO eBPF Toolkit",
+      "description": "Kubernetes-native observability tool using eBPF to capture kernel signals and correlate them with OpenTelemetry traces for LLM SLO attribution.",
+      "webpageUrl": {
+        "url": "https://github.com/ogulcanaydogan/LLM-SLO-eBPF-Toolkit"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/ogulcanaydogan/LLM-SLO-eBPF-Toolkit"
+      },
+      "licenses": [
+        "spdx:MIT"
+      ],
+      "tags": [
+        "go",
+        "ebpf",
+        "kubernetes",
+        "observability",
+        "slo"
+      ]
+    },
+    {
+      "guid": "ai-model-card-generator",
+      "name": "AI Model Card Generator",
+      "description": "CLI pipeline that pulls model metadata from HuggingFace, W&B, and MLflow, runs fairness analysis, checks EU AI Act compliance, and exports model cards.",
+      "webpageUrl": {
+        "url": "https://github.com/ogulcanaydogan/AI-Model-Card-Generator"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/ogulcanaydogan/AI-Model-Card-Generator"
+      },
+      "licenses": [
+        "spdx:Apache-2.0"
+      ],
+      "tags": [
+        "go",
+        "model-cards",
+        "eu-ai-act",
+        "compliance",
+        "fairness"
+      ]
+    },
+    {
+      "guid": "mmsafe-bench",
+      "name": "MMSAFE-Bench",
+      "description": "Multi-modal safety evaluation benchmark for AI systems. Covers 20 hazard categories and 9 attack strategies aligned with MLCommons AI Safety standards.",
+      "webpageUrl": {
+        "url": "https://github.com/ogulcanaydogan/MMSAFE-Bench"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/ogulcanaydogan/MMSAFE-Bench"
+      },
+      "licenses": [
+        "spdx:Apache-2.0"
+      ],
+      "tags": [
+        "python",
+        "safety",
+        "benchmark",
+        "multi-modal",
+        "evaluation"
+      ]
+    },
+    {
+      "guid": "ai-regulation-compliance-scanner",
+      "name": "AI Regulation Compliance Scanner",
+      "description": "Rule-driven scanner that checks AI systems against EU AI Act, UK AI regulations, and NIST AI RMF requirements. Deterministic pass/warn/fail scoring.",
+      "webpageUrl": {
+        "url": "https://github.com/ogulcanaydogan/AI-Regulation-Compliance-Scanner"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/ogulcanaydogan/AI-Regulation-Compliance-Scanner"
+      },
+      "licenses": [
+        "spdx:Apache-2.0"
+      ],
+      "tags": [
+        "python",
+        "compliance",
+        "eu-ai-act",
+        "nist",
+        "regulation"
+      ]
+    },
+    {
+      "guid": "llm-cost-guardian",
+      "name": "LLM Cost Guardian",
+      "description": "Transparent proxy for multi-provider LLM cost tracking, budgeting, and optimization. Supports OpenAI, Anthropic, Azure, Bedrock, and Vertex AI with real-time cost headers.",
+      "webpageUrl": {
+        "url": "https://github.com/ogulcanaydogan/LLM-Cost-Guardian"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/ogulcanaydogan/LLM-Cost-Guardian"
+      },
+      "licenses": [
+        "spdx:Apache-2.0"
+      ],
+      "tags": [
+        "go",
+        "cost-tracking",
+        "llm",
+        "proxy",
+        "budgeting"
+      ]
     }
   ],
   "funding": {
