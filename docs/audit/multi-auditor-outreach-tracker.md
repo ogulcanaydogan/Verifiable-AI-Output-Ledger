@@ -23,9 +23,9 @@ Use the following reference format per firm:
 
 | Firm | Transfer Ref | Package Tier | Sent At (UTC) | Ack Due (UTC) | SOW Due (UTC) | Ack Ref | SOW Ref | Status | Next Action |
 |---|---|---|---|---|---|---|---|---|---|
-| Trail of Bits | `TOB-HANDOFF-20260306-001` | redacted | 2026-03-06T13:30:00Z | 2026-03-09T13:30:00Z | 2026-03-13T23:59:59Z | pending | active contract (`docs/audit/sow.md`) | follow_up_sent | re-check response by 2026-03-12 |
-| NCC Group | `NCC-HANDOFF-20260306-001` | redacted | 2026-03-06T13:30:00Z | 2026-03-09T13:30:00Z | 2026-03-13T23:59:59Z | pending | pending | follow_up_sent | re-check response by 2026-03-12 |
-| Cure53 | `C53-HANDOFF-20260306-001` | redacted | 2026-03-06T13:30:00Z | 2026-03-09T13:30:00Z | 2026-03-13T23:59:59Z | pending | pending | follow_up_sent | re-check response by 2026-03-12 |
+| Trail of Bits | `TOB-HANDOFF-20260306-001` | redacted | 2026-03-06T13:30:00Z | 2026-03-09T13:30:00Z | 2026-03-13T23:59:59Z | signed contract record (`docs/audit/contract-signoff-2026-03-06.md`) | active contract (`docs/audit/sow.md`) | active_sow | continue execution path and run weekly checkpoint cadence |
+| NCC Group | `NCC-HANDOFF-20260306-001` | redacted | 2026-03-06T13:30:00Z | 2026-03-09T13:30:00Z | 2026-03-13T23:59:59Z | pending | pending | standby | keep on standby; reactivate only if active path stalls |
+| Cure53 | `C53-HANDOFF-20260306-001` | redacted | 2026-03-06T13:30:00Z | 2026-03-09T13:30:00Z | 2026-03-13T23:59:59Z | pending | pending | standby | keep on standby; reactivate only if active path stalls |
 
 ## 4. Escalation Matrix
 
@@ -43,8 +43,10 @@ Use the following reference format per firm:
 ## 5. Latest Operational Checkpoint
 
 1. `2026-03-10`: follow-up sent on all three outreach paths after the expired 72h acknowledgment window.
-2. Current waiting state: `ack` still pending for all firms.
-3. Next manual checkpoint: `2026-03-12`.
+2. `2026-03-21` catch-up: no additional external acknowledgment has been recorded after the `2026-03-10` follow-up update.
+3. Trail of Bits path is treated as `ack + active SOW` via signed contract record (`docs/audit/contract-signoff-2026-03-06.md`) and active SOW (`docs/audit/sow.md`).
+4. NCC Group and Cure53 are now `standby` after 5 business day SOW activation miss (`2026-03-13T23:59:59Z`).
+5. Next manual checkpoint: `2026-03-28`.
 
 ## 6. Completion Criteria
 
