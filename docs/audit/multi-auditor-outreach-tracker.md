@@ -44,9 +44,10 @@ Use the following reference format per firm:
 
 1. `2026-03-10`: follow-up sent on all three outreach paths after the expired 72h acknowledgment window.
 2. `2026-03-21` catch-up: no additional external acknowledgment has been recorded after the `2026-03-10` follow-up update.
-3. Trail of Bits path is treated as `ack + active SOW` via signed contract record (`docs/audit/contract-signoff-2026-03-06.md`) and active SOW (`docs/audit/sow.md`).
-4. NCC Group and Cure53 are now `standby` after 5 business day SOW activation miss (`2026-03-13T23:59:59Z`).
-5. Next manual checkpoint: `2026-03-28`.
+3. `2026-03-30` overdue catch-up checkpoint: no additional external acknowledgment has been recorded since `2026-03-21`.
+4. Trail of Bits path remains `ack + active SOW` via signed contract record (`docs/audit/contract-signoff-2026-03-06.md`) and active SOW (`docs/audit/sow.md`).
+5. NCC Group and Cure53 remain `standby` after 5 business day SOW activation miss (`2026-03-13T23:59:59Z`).
+6. Next manual checkpoint: `2026-04-06`.
 
 ## 6. Completion Criteria
 
