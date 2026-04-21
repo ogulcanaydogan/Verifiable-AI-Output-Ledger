@@ -47,9 +47,10 @@ Use the following reference format per firm:
 3. `2026-03-30` overdue catch-up checkpoint: no additional external acknowledgment has been recorded since `2026-03-21`.
 4. `2026-04-08` overdue catch-up checkpoint: no additional external acknowledgment has been recorded since `2026-03-30`.
 5. `2026-04-13` no-change checkpoint: no additional external acknowledgment has been recorded since `2026-04-08`.
-6. Trail of Bits path remains `ack + active SOW` via signed contract record (`docs/audit/contract-signoff-2026-03-06.md`) and active SOW (`docs/audit/sow.md`).
-7. NCC Group and Cure53 remain `standby` after 5 business day SOW activation miss (`2026-03-13T23:59:59Z`).
-8. Next manual checkpoint: `2026-04-21`.
+6. `2026-04-21` milestone checkpoint: no external audit report or additional acknowledgment has been recorded since `2026-04-13`.
+7. Trail of Bits path remains `ack + active SOW` via signed contract record (`docs/audit/contract-signoff-2026-03-06.md`) and active SOW (`docs/audit/sow.md`).
+8. NCC Group and Cure53 remain `standby` after 5 business day SOW activation miss (`2026-03-13T23:59:59Z`).
+9. Next manual checkpoint: `2026-04-28`.
 
 ## 6. Completion Criteria
 
