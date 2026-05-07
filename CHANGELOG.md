@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.29] - 2026-05-07
+
 ### Added
+
+- **Structured error taxonomy** (`pkg/valerr`) — Introduced typed `valerr.Code` constants for all VAOL error conditions (e.g. `VAOL_RECORD_NOT_FOUND`, `VAOL_POLICY_DENIED`, `VAOL_DUPLICATE_REQUEST_ID`). API error responses now include a stable `"code"` field alongside the human-readable `"error"` string, enabling programmatic error handling without string parsing.
+- **`writeErrorCode` helper** — Internal API helper that emits both `"error"` and `"code"` fields atomically, replacing ad-hoc map construction at individual call sites.
+
+### Changed
+
+- All handler error paths in `pkg/api/handlers.go` migrated from `writeError` to `writeErrorCode` with the appropriate typed code. Backward-compatible: the `"error"` field is preserved.
+
+### Added (from prior unreleased work)
 
 - **Persistent Merkle leaf state interface** — Added optional `store.MerkleLeafStore` extension and `StoredMerkleLeaf` model to persist RFC 6962 leaf state.
 - **Startup restore from persisted Merkle leaves** — API startup now attempts to restore tree state from persisted leaves before fallback record traversal rebuild.

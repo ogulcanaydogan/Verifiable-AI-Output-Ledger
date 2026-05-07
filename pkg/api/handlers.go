@@ -20,6 +20,7 @@ import (
 	"github.com/ogulcanaydogan/vaol/pkg/record"
 	"github.com/ogulcanaydogan/vaol/pkg/signer"
 	"github.com/ogulcanaydogan/vaol/pkg/store"
+	"github.com/ogulcanaydogan/vaol/pkg/valerr"
 	"github.com/ogulcanaydogan/vaol/pkg/verifier"
 )
 
@@ -36,7 +37,7 @@ type verifyBundleRequest struct {
 func (s *Server) handleAppendRecord(w http.ResponseWriter, r *http.Request) {
 	var rec record.DecisionRecord
 	if err := json.NewDecoder(r.Body).Decode(&rec); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body: %v", err)
+		writeErrorCode(w, http.StatusBadRequest, valerr.CodeInvalidRequestBody, "invalid request body: %v", err)
 		return
 	}
 
@@ -131,7 +132,7 @@ func (s *Server) handleAppendRecord(w http.ResponseWriter, r *http.Request) {
 		decision, err := s.policy.Evaluate(r.Context(), policyInput)
 		if err != nil {
 			s.logger.Error("policy evaluation failed", "error", err)
-			writeError(w, http.StatusInternalServerError, "policy evaluation failed")
+			writeErrorCode(w, http.StatusInternalServerError, valerr.CodePolicyError, "policy evaluation failed")
 			return
 		}
 
@@ -155,7 +156,7 @@ func (s *Server) handleAppendRecord(w http.ResponseWriter, r *http.Request) {
 	// Compute record hash (excludes integrity computed fields)
 	recordHash, err := record.ComputeRecordHash(&rec)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "computing record hash: %v", err)
+		writeErrorCode(w, http.StatusInternalServerError, valerr.CodeHashError, "computing record hash: %v", err)
 		return
 	}
 	rec.Integrity.RecordHash = recordHash
@@ -166,7 +167,7 @@ func (s *Server) handleAppendRecord(w http.ResponseWriter, r *http.Request) {
 		if err == store.ErrNotFound {
 			rec.Integrity.PreviousRecordHash = vaolcrypto.ZeroHash
 		} else {
-			writeError(w, http.StatusInternalServerError, "getting latest record: %v", err)
+			writeErrorCode(w, http.StatusInternalServerError, valerr.CodeStorageError, "getting latest record: %v", err)
 			return
 		}
 	} else {
@@ -184,7 +185,7 @@ func (s *Server) handleAppendRecord(w http.ResponseWriter, r *http.Request) {
 	// Get inclusion proof
 	proof, err := s.tree.InclusionProof(leafIndex, treeSize)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "generating inclusion proof: %v", err)
+		writeErrorCode(w, http.StatusInternalServerError, valerr.CodeProofGenerationError, "generating inclusion proof: %v", err)
 		return
 	}
 	rec.Integrity.InclusionProof = &record.InclusionProof{
@@ -195,7 +196,7 @@ func (s *Server) handleAppendRecord(w http.ResponseWriter, r *http.Request) {
 	rec.Integrity.InclusionProofRef = fmt.Sprintf("/v1/proofs/%s", proofID)
 
 	if err := record.Validate(&rec); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid decision record: %v", err)
+		writeErrorCode(w, http.StatusBadRequest, valerr.CodeInvalidRequestBody, "invalid decision record: %v", err)
 		return
 	}
 
@@ -203,13 +204,13 @@ func (s *Server) handleAppendRecord(w http.ResponseWriter, r *http.Request) {
 	// full integrity evidence (except sequence number, which is assigned by store).
 	fullPayload, err := json.Marshal(&rec)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "marshaling record: %v", err)
+		writeErrorCode(w, http.StatusInternalServerError, valerr.CodeMarshalError, "marshaling record: %v", err)
 		return
 	}
 
 	env, err := signer.SignEnvelope(r.Context(), fullPayload, s.signer)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "signing record: %v", err)
+		writeErrorCode(w, http.StatusInternalServerError, valerr.CodeSigningError, "signing record: %v", err)
 		return
 	}
 
@@ -227,10 +228,10 @@ func (s *Server) handleAppendRecord(w http.ResponseWriter, r *http.Request) {
 	seq, err := s.store.Append(r.Context(), stored)
 	if err != nil {
 		if err == store.ErrDuplicateRequestID {
-			writeError(w, http.StatusConflict, "duplicate request_id")
+			writeErrorCode(w, http.StatusConflict, valerr.CodeDuplicateRequestID, "duplicate request_id")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "storing record: %v", err)
+		writeErrorCode(w, http.StatusInternalServerError, valerr.CodeStorageError, "storing record: %v", err)
 		return
 	}
 
@@ -305,17 +306,17 @@ func (s *Server) handleGetRecord(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	reqID, err := uuid.Parse(idStr)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request ID: %v", err)
+		writeErrorCode(w, http.StatusBadRequest, valerr.CodeInvalidRecordID, "invalid request ID: %v", err)
 		return
 	}
 
 	stored, err := s.store.GetByRequestID(r.Context(), reqID)
 	if err != nil {
 		if err == store.ErrNotFound {
-			writeError(w, http.StatusNotFound, "record not found")
+			writeErrorCode(w, http.StatusNotFound, valerr.CodeRecordNotFound, "record not found")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "retrieving record: %v", err)
+		writeErrorCode(w, http.StatusInternalServerError, valerr.CodeStorageError, "retrieving record: %v", err)
 		return
 	}
 
@@ -361,7 +362,7 @@ func (s *Server) handleListRecords(w http.ResponseWriter, r *http.Request) {
 
 	records, err := s.store.List(r.Context(), filter)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "listing records: %v", err)
+		writeErrorCode(w, http.StatusInternalServerError, valerr.CodeStorageError, "listing records: %v", err)
 		return
 	}
 
@@ -375,17 +376,17 @@ func (s *Server) handleGetProof(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	reqID, err := uuid.Parse(idStr)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request ID: %v", err)
+		writeErrorCode(w, http.StatusBadRequest, valerr.CodeInvalidRecordID, "invalid request ID: %v", err)
 		return
 	}
 
 	stored, err := s.store.GetByRequestID(r.Context(), reqID)
 	if err != nil {
 		if err == store.ErrNotFound {
-			writeError(w, http.StatusNotFound, "record not found")
+			writeErrorCode(w, http.StatusNotFound, valerr.CodeRecordNotFound, "record not found")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "retrieving record: %v", err)
+		writeErrorCode(w, http.StatusInternalServerError, valerr.CodeStorageError, "retrieving record: %v", err)
 		return
 	}
 
@@ -403,7 +404,7 @@ func (s *Server) handleGetProof(w http.ResponseWriter, r *http.Request) {
 	// Fallback for legacy records without stored proof index.
 	liveProof, liveErr := s.tree.InclusionProof(stored.MerkleLeafIndex, s.tree.Size())
 	if liveErr != nil {
-		writeError(w, http.StatusInternalServerError, "generating proof: %v", liveErr)
+		writeErrorCode(w, http.StatusInternalServerError, valerr.CodeProofGenerationError, "generating proof: %v", liveErr)
 		return
 	}
 	writeJSON(w, http.StatusOK, liveProof)
@@ -412,14 +413,14 @@ func (s *Server) handleGetProof(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleGetProofByID(w http.ResponseWriter, r *http.Request) {
 	proofID := r.PathValue("id")
 	if proofID == "" {
-		writeError(w, http.StatusBadRequest, "proof ID is required")
+		writeErrorCode(w, http.StatusBadRequest, valerr.CodeProofIDRequired, "proof ID is required")
 		return
 	}
 
 	proof, err := s.store.GetProofByID(r.Context(), proofID)
 	if err != nil {
 		if err != store.ErrNotFound {
-			writeError(w, http.StatusInternalServerError, "retrieving proof: %v", err)
+			writeErrorCode(w, http.StatusInternalServerError, valerr.CodeStorageError, "retrieving proof: %v", err)
 			return
 		}
 
@@ -428,17 +429,17 @@ func (s *Server) handleGetProofByID(w http.ResponseWriter, r *http.Request) {
 		requestIDRaw := strings.TrimPrefix(proofID, "proof:")
 		requestID, parseErr := uuid.Parse(requestIDRaw)
 		if parseErr != nil {
-			writeError(w, http.StatusNotFound, "proof not found")
+			writeErrorCode(w, http.StatusNotFound, valerr.CodeProofNotFound, "proof not found")
 			return
 		}
 
 		stored, recErr := s.store.GetByRequestID(r.Context(), requestID)
 		if recErr != nil {
 			if recErr == store.ErrNotFound {
-				writeError(w, http.StatusNotFound, "record for proof not found")
+				writeErrorCode(w, http.StatusNotFound, valerr.CodeRecordNotFound, "record for proof not found")
 				return
 			}
-			writeError(w, http.StatusInternalServerError, "retrieving record for proof: %v", recErr)
+			writeErrorCode(w, http.StatusInternalServerError, valerr.CodeStorageError, "retrieving record for proof: %v", recErr)
 			return
 		}
 
@@ -448,7 +449,7 @@ func (s *Server) handleGetProofByID(w http.ResponseWriter, r *http.Request) {
 
 		liveProof, liveErr := s.tree.InclusionProof(stored.MerkleLeafIndex, s.tree.Size())
 		if liveErr != nil {
-			writeError(w, http.StatusInternalServerError, "generating proof: %v", liveErr)
+			writeErrorCode(w, http.StatusInternalServerError, valerr.CodeProofGenerationError, "generating proof: %v", liveErr)
 			return
 		}
 		writeJSON(w, http.StatusOK, liveProof)
@@ -458,10 +459,10 @@ func (s *Server) handleGetProofByID(w http.ResponseWriter, r *http.Request) {
 	stored, err := s.store.GetByRequestID(r.Context(), proof.RequestID)
 	if err != nil {
 		if err == store.ErrNotFound {
-			writeError(w, http.StatusNotFound, "record for proof not found")
+			writeErrorCode(w, http.StatusNotFound, valerr.CodeRecordNotFound, "record for proof not found")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "retrieving record for proof: %v", err)
+		writeErrorCode(w, http.StatusInternalServerError, valerr.CodeStorageError, "retrieving record for proof: %v", err)
 		return
 	}
 
@@ -475,25 +476,25 @@ func (s *Server) handleGetProofByID(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleVerifyRecord(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "reading request body: %v", err)
+		writeErrorCode(w, http.StatusBadRequest, valerr.CodeInvalidRequestBody, "reading request body: %v", err)
 		return
 	}
 
 	env, profileFromBody, err := decodeVerifyEnvelopeRequest(body)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid envelope: %v", err)
+		writeErrorCode(w, http.StatusBadRequest, valerr.CodeInvalidEnvelope, "invalid envelope: %v", err)
 		return
 	}
 
 	profile, err := resolveVerificationProfile(r.URL.Query().Get("profile"), profileFromBody)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid verification profile: %v", err)
+		writeErrorCode(w, http.StatusBadRequest, valerr.CodeInvalidVerification, "invalid verification profile: %v", err)
 		return
 	}
 
 	result, err := s.verifier.VerifyEnvelopeWithProfile(r.Context(), env, profile)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "verification error: %v", err)
+		writeErrorCode(w, http.StatusInternalServerError, valerr.CodeVerificationError, "verification error: %v", err)
 		return
 	}
 
@@ -503,25 +504,25 @@ func (s *Server) handleVerifyRecord(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleVerifyBundle(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "reading request body: %v", err)
+		writeErrorCode(w, http.StatusBadRequest, valerr.CodeInvalidRequestBody, "reading request body: %v", err)
 		return
 	}
 
 	bundle, profileFromBody, err := decodeVerifyBundleRequest(body)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid bundle: %v", err)
+		writeErrorCode(w, http.StatusBadRequest, valerr.CodeInvalidEnvelope, "invalid bundle: %v", err)
 		return
 	}
 
 	profile, err := resolveVerificationProfile(r.URL.Query().Get("profile"), profileFromBody)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid verification profile: %v", err)
+		writeErrorCode(w, http.StatusBadRequest, valerr.CodeInvalidVerification, "invalid verification profile: %v", err)
 		return
 	}
 
 	result, err := s.verifier.VerifyBundle(r.Context(), bundle, profile)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "bundle verification error: %v", err)
+		writeErrorCode(w, http.StatusInternalServerError, valerr.CodeVerificationError, "bundle verification error: %v", err)
 		return
 	}
 
@@ -694,7 +695,7 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 
 	records, err := s.store.List(r.Context(), filter)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "listing records: %v", err)
+		writeErrorCode(w, http.StatusInternalServerError, valerr.CodeStorageError, "listing records: %v", err)
 		return
 	}
 
@@ -859,6 +860,13 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 func writeError(w http.ResponseWriter, status int, format string, args ...any) {
 	writeJSON(w, status, map[string]string{
 		"error": fmt.Sprintf(format, args...),
+	})
+}
+
+func writeErrorCode(w http.ResponseWriter, status int, code valerr.Code, format string, args ...any) {
+	writeJSON(w, status, map[string]string{
+		"error": fmt.Sprintf(format, args...),
+		"code":  string(code),
 	})
 }
 
