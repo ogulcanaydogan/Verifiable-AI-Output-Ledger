@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Control matrix (`docs/control-matrix.md`): maps all 9 ledger integrity invariants to their enforcing CI job and test function; surfaces 3 v0.2.30 gaps in the gap register.
+
 ### Changed
 
 - CI and release workflows now pin `go-version: "1.25.x"` (was `"1.24.13"`); pulls in stdlib security fixes from Go 1.25.9 / 1.25.10 that `govulncheck` (`golang.org/x/vuln/cmd/govulncheck@v1.1.4`) flagged on the Security Scan job. `go.mod` remains on `go 1.24.0` so the module consumer floor is unchanged.
