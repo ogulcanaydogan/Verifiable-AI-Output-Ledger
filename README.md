@@ -6,7 +6,6 @@ Provides tamper-evident audit trails for regulated industries where organization
 
 [![CI](https://github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger/actions/workflows/ci.yml/badge.svg)](https://github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger/badge)](https://scorecard.dev/viewer/?uri=github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger)
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/0000/badge)](https://www.bestpractices.dev/projects/0000)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger)](https://goreportcard.com/report/github.com/ogulcanaydogan/Verifiable-AI-Output-Ledger)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8.svg)](go.mod)
