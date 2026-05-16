@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Control matrix (`docs/control-matrix.md`): maps all 9 ledger integrity invariants to their enforcing CI job and test function; surfaces 3 v0.2.30 gaps in the gap register.
+
 ## [0.2.29] - 2026-05-07
 
 ### Added
