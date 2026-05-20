@@ -1,34 +1,56 @@
-run:
-  timeout: 5m
-
+version: "2"
 linters:
   enable:
-    - errcheck
-    - govet
-    - ineffassign
-    - staticcheck
-    - unused
     - bodyclose
     - noctx
-
-linters-settings:
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment
-      - shadow
-
+  settings:
+    govet:
+      disable:
+        - fieldalignment
+        - shadow
+      enable-all: true
+    staticcheck:
+      # Disable quickfix and style checks added by v2 defaults; defer to a
+      # follow-up refactor: PR so this bump stays scope-clean.
+      checks:
+        - "all"
+        - "-QF1001"
+        - "-QF1011"
+        - "-QF1012"
+        - "-ST1005"
+        - "-ST1023"
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - errcheck
+          - noctx
+        path: _test\.go
+      - path: _test\.go
+        text: shadow
+      - linters:
+          - errcheck
+          - noctx
+        path: examples/
+      - linters:
+          - noctx
+        text: "net.Listen must not be called"
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - errcheck
-        - noctx
-    - path: _test\.go
-      text: shadow
-    - path: examples/
-      linters:
-        - errcheck
-        - noctx
   max-issues-per-linter: 50
   max-same-issues: 10
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
