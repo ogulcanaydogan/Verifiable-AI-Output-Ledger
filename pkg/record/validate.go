@@ -145,7 +145,7 @@ func validateHashFormat(hash, fieldName string) error {
 		return fmt.Errorf("%s: invalid hash prefix (expected 'sha256:')", fieldName)
 	}
 	for _, c := range hash[7:] {
-		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
 			return fmt.Errorf("%s: invalid hex character in hash: %c", fieldName, c)
 		}
 	}

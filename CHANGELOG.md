@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI and release workflows now pin `go-version: "1.25.x"` (was `"1.24.13"`); pulls in stdlib security fixes from Go 1.25.9 / 1.25.10 that `govulncheck` (`golang.org/x/vuln/cmd/govulncheck@v1.1.4`) flagged on the Security Scan job. `go.mod` remains on `go 1.24.0` so the module consumer floor is unchanged.
 - `golangci-lint-action` bumped from v6.5.2 to v7.0.1 (`9fae48ac`) and lint binary from `v1.64.8` to `v2.12.2`; `.golangci.yml` migrated to v2 schema. Quickfix and style checks `QF1001`, `QF1011`, `QF1012`, `ST1005`, `ST1023` deferred to a follow-up `refactor:`/`style:` PR so this bump stays scope-clean.
 
+### Refactored
+
+- `pkg/verifier/report.go` Markdown report builder now uses `fmt.Fprintf(&b, ...)` directly against the `strings.Builder` instead of the `b.WriteString(fmt.Sprintf(...))` double-allocation pattern (10 call sites; staticcheck `QF1012`). Output is identical.
+- `pkg/record/validate.go` hex-character check rewritten via De Morgan's law from `!((digit) || (lowercase hex))` to `(not digit) && (not lowercase hex)` (staticcheck `QF1001`). Equivalent behaviour, idiomatic per the v2 linter set.
+
 ## [0.2.29] - 2026-05-07
 
 ### Added
