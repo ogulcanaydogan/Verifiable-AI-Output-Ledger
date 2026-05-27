@@ -435,7 +435,7 @@ func parseNumericDate(v any) (time.Time, bool) {
 			return time.Time{}, false
 		}
 		// Accept numeric unix time as string.
-		var num json.Number = json.Number(t)
+		num := json.Number(t)
 		n, err := num.Int64()
 		if err != nil {
 			return time.Time{}, false

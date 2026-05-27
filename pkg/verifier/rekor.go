@@ -59,7 +59,7 @@ func (c *HTTPRekorClient) VerifyEntry(ctx context.Context, baseURL, entryID stri
 		return fmt.Errorf("reading Rekor response: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Rekor entry lookup failed: status=%d body=%s", resp.StatusCode, string(body))
+		return fmt.Errorf("rekor entry lookup failed: status=%d body=%s", resp.StatusCode, string(body))
 	}
 
 	payloadHash, err := extractRekorPayloadHash(body)
