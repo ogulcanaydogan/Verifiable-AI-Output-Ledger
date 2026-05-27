@@ -163,7 +163,7 @@ func (s *SigstoreSigner) submitRekorEntry(ctx context.Context, payload []byte, s
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("Rekor status %d: %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf("rekor status %d: %s", resp.StatusCode, string(body))
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -186,7 +186,7 @@ func (s *SigstoreSigner) submitRekorEntry(ctx context.Context, payload []byte, s
 		}
 	}
 
-	return "", fmt.Errorf("Rekor response missing entry ID")
+	return "", fmt.Errorf("rekor response missing entry ID")
 }
 
 func mintEphemeralCert(identity string, pub ed25519.PublicKey, priv ed25519.PrivateKey) ([]byte, error) {
@@ -399,7 +399,7 @@ func (v *SigstoreVerifier) verifyRekorEntry(ctx context.Context, entryID string)
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("Rekor entry lookup failed: status=%d body=%s", resp.StatusCode, string(body))
+		return fmt.Errorf("rekor entry lookup failed: status=%d body=%s", resp.StatusCode, string(body))
 	}
 	return nil
 }
