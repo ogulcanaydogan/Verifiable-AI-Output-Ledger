@@ -127,4 +127,4 @@ CI jobs are defined in `.github/workflows/ci.yml`. All jobs run on every PR and 
 |---|---|---|
 | No CI assertion for HA sequencer leader-election fencing | Unit test for `pkg/ingest` writer-fence invariant | v0.2.30 |
 | No cross-region consistency test | DR playbook integration test | v0.2.30 |
-| Structured error taxonomy not validated by CI | Add `pkg/valerr` contract test | v0.2.30 |
+| ~~Structured error taxonomy not validated by CI~~ | **Closed** — `pkg/valerr/contract_test.go` added; runs in `Test (Go Full)` | v0.2.30 |
