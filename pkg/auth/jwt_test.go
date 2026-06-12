@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
@@ -213,4 +214,104 @@ func makeRSAJWKS(kid string, pub *rsa.PublicKey) string {
 
 func bigIntFromInt(v int) *big.Int {
 	return new(big.Int).SetInt64(int64(v))
+}
+
+func TestParseMode(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		input   string
+		want    Mode
+		wantErr bool
+	}{
+		{"required", ModeRequired, false},
+		{"REQUIRED", ModeRequired, false},
+		{"optional", ModeOptional, false},
+		{"Optional", ModeOptional, false},
+		{"disabled", ModeDisabled, false},
+		{"", ModeDisabled, false},
+		{"  ", ModeDisabled, false},
+		{"invalid", "", true},
+		{"none", "", true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.input, func(t *testing.T) {
+			t.Parallel()
+			got, err := ParseMode(tc.input)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("ParseMode(%q) expected error, got nil", tc.input)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("ParseMode(%q) unexpected error: %v", tc.input, err)
+			}
+			if got != tc.want {
+				t.Fatalf("ParseMode(%q) = %q, want %q", tc.input, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestInjectTrustedHeaders(t *testing.T) {
+	t.Parallel()
+
+	t.Run("nil claims returns request unchanged", func(t *testing.T) {
+		t.Parallel()
+		r, _ := http.NewRequest(http.MethodGet, "/", nil)
+		r.Header.Set("Authorization", "Bearer tok")
+		got := InjectTrustedHeaders(r, nil)
+		if got.Header.Get("Authorization") != "Bearer tok" {
+			t.Fatal("expected Authorization header to be preserved when claims is nil")
+		}
+	})
+
+	t.Run("removes identity headers and injects verified claims", func(t *testing.T) {
+		t.Parallel()
+		r, _ := http.NewRequest(http.MethodGet, "/", nil)
+		r.Header.Set("Authorization", "Bearer tok")
+		r.Header.Set("X-Tenant-ID", "untrusted-tenant")
+		r.Header.Set("X-VAOL-Tenant-ID", "untrusted-vaol")
+
+		claims := &Claims{
+			Issuer:    "https://issuer.example",
+			Subject:   "svc-app",
+			TenantID:  "acme-prod",
+			TokenHash: "abc123",
+		}
+		got := InjectTrustedHeaders(r, claims)
+
+		if got.Header.Get("Authorization") != "" {
+			t.Error("expected Authorization header to be removed")
+		}
+		if got.Header.Get("X-Tenant-ID") != "" {
+			t.Error("expected X-Tenant-ID to be removed")
+		}
+		if got.Header.Get("X-VAOL-Tenant-ID") != "acme-prod" {
+			t.Errorf("expected X-VAOL-Tenant-ID=acme-prod, got %q", got.Header.Get("X-VAOL-Tenant-ID"))
+		}
+		if got.Header.Get("X-Auth-Source") != "jwt" {
+			t.Errorf("expected X-Auth-Source=jwt, got %q", got.Header.Get("X-Auth-Source"))
+		}
+		if got.Header.Get("X-Auth-Token-Hash") != "abc123" {
+			t.Errorf("expected X-Auth-Token-Hash=abc123, got %q", got.Header.Get("X-Auth-Token-Hash"))
+		}
+		if got.Header.Get("X-Auth-Issuer") != "https://issuer.example" {
+			t.Errorf("expected X-Auth-Issuer, got %q", got.Header.Get("X-Auth-Issuer"))
+		}
+		if got.Header.Get("X-Auth-Subject") != "svc-app" {
+			t.Errorf("expected X-Auth-Subject=svc-app, got %q", got.Header.Get("X-Auth-Subject"))
+		}
+	})
+
+	t.Run("original request headers are not mutated", func(t *testing.T) {
+		t.Parallel()
+		r, _ := http.NewRequest(http.MethodGet, "/", nil)
+		r.Header.Set("Authorization", "Bearer original")
+		claims := &Claims{Subject: "svc", TokenHash: "h"}
+		_ = InjectTrustedHeaders(r, claims)
+		if r.Header.Get("Authorization") != "Bearer original" {
+			t.Fatal("InjectTrustedHeaders must not mutate the original request")
+		}
+	})
 }
