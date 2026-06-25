@@ -11,6 +11,7 @@ Provides tamper-evident audit trails for regulated industries where organization
 [![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8.svg)](go.mod)
 [![Python SDK](https://img.shields.io/badge/Python_SDK-3.11+-3776AB.svg)](sdk/python)
 [![TypeScript SDK](https://img.shields.io/badge/TypeScript_SDK-5.0+-3178C6.svg)](sdk/typescript)
+[![Go Reference](https://pkg.go.dev/badge/github.com/ogulcanaydogan/vaol.svg)](https://pkg.go.dev/github.com/ogulcanaydogan/vaol)
 
 ---
 
@@ -141,6 +142,18 @@ graph LR
 | `plaintext` | Raw text (policy-gated) | Full content for internal audit; requires explicit policy allow |
 
 ---
+
+## Install
+
+Install the `vaol-cli` client with the Go toolchain (Go 1.24+):
+
+```bash
+go install github.com/ogulcanaydogan/vaol/cmd/vaol-cli@latest
+```
+
+This places `vaol-cli` in `$(go env GOPATH)/bin`. To run the server and proxy,
+use the published container images (`ghcr.io/ogulcanaydogan/vaol-server`,
+`ghcr.io/ogulcanaydogan/vaol-proxy`) or build from source (below).
 
 ## Quick Start
 
