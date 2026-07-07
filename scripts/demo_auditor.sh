@@ -195,12 +195,25 @@ fi
 docker compose "${COMPOSE_ARGS[@]}" up -d postgres opa >/dev/null
 
 echo "[demo] waiting for postgres..."
-for _ in $(seq 1 30); do
-  if docker compose "${COMPOSE_ARGS[@]}" exec -T postgres pg_isready -U vaol >/dev/null 2>&1; then
+# Probe with a real query against the target database rather than pg_isready.
+# During container init postgres briefly accepts socket connections on a
+# temporary instance (before restarting on TCP), which makes pg_isready report
+# "ready" too early and leaves vaol-server hitting "connection reset by peer".
+# A successful "SELECT 1" on the vaol database only happens once init has
+# finished and the real instance is serving.
+PG_READY=0
+for _ in $(seq 1 60); do
+  if docker compose "${COMPOSE_ARGS[@]}" exec -T postgres \
+    psql -U vaol -d vaol -c 'SELECT 1' >/dev/null 2>&1; then
+    PG_READY=1
     break
   fi
   sleep 1
 done
+if [[ "${PG_READY}" != "1" ]]; then
+  echo "timed out waiting for postgres to accept queries on database 'vaol'" >&2
+  exit 1
+fi
 
 echo "[demo] starting vaol-server locally..."
 "${BIN_DIR}/vaol-server" \
