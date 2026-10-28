@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
         with:
           python-version: "3.12"
       - run: cd sdk/python && pip install -e ".[dev]" cryptography
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
         with:
           python-version: "3.12"
       - run: cd sdk/python && pip install -e ".[dev]" cryptography && pytest tests/ -v
@@ -86,7 +86,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: "20"
       - run: cd sdk/typescript && npm ci && npm test
@@ -96,7 +96,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: "20"
       - run: cd sdk/typescript && npm ci && npm run lint
@@ -121,7 +121,7 @@ jobs:
         with:
           go-version: "1.26.5"
       - run: go test -bench=. -benchmem -count=1 ./pkg/merkle/... ./pkg/signer/... ./pkg/record/... | tee bench-results.txt
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: benchmark-results
           path: bench-results.txt
@@ -136,7 +136,7 @@ jobs:
         with:
           go-version: "1.26.5"
       - run: ./scripts/check_startup_restore_bench.sh
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: startup-restore-benchmark-results
           path: startup-restore-bench.txt
@@ -169,12 +169,12 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610
+      - uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c
         with:
           path: .
           format: spdx-json
           output-file: sbom.spdx.json
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: sbom-spdx
           path: sbom.spdx.json
@@ -226,7 +226,7 @@ jobs:
           jq -e '.title and .bundle and (.bundle.results | type == "array")' "${ARTIFACT_DIR}/verify-report.json" >/dev/null
       - name: Upload auditor demo artifacts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: auditor-demo-artifacts
           path: |
